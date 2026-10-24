@@ -1,0 +1,1192 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="theme-latte">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <link rel="manifest" href='data:application/manifest+json,{"name":"超級計算與換算 App Pro Max","short_name":"計算換算","start_url":".","display":"standalone","background_color":"%230f172a","theme_color":"%2338bdf8","icons":[]}'>
+    <title>超級計算與換算 App Pro Max ☕</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- MathJS (科學計算引擎) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/9.4.4/math.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Lunar JS (農曆萬年曆引擎) -->
+    <script src="https://fastly.jsdelivr.net/npm/lunar-javascript@1.6.12/lunar.min.js"></script>
+    
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        button, [role="button"] {
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        input, textarea { user-select: text; -webkit-user-select: text; }
+        .panel-enter { animation: panelFadeIn 0.3s ease-out; }
+        @keyframes panelFadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        body, html { height: 100%; overflow: hidden; }
+        ::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* ===== 5 款質感皮膚變數 ===== */
+        :root.theme-aurora {
+            --bg-main: #0f172a; --bg-card: #1e293b; --text-main: #f8fafc; --text-sub: #94a3b8;
+            --accent: #38bdf8; --accent-gradient: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%);
+            --border-color: #334155; --btn-bg: #334155; --btn-text: #f8fafc; --note-bg: #0f172a;
+        }
+        :root.theme-latte {
+            --bg-main: #fff8f0; --bg-card: #ffffff; --text-main: #54382b; --text-sub: #9c8275;
+            --accent: #e07a5f; --accent-gradient: linear-gradient(135deg, #f2cc8f 0%, #e07a5f 100%);
+            --border-color: #f4e4ba; --btn-bg: #fff8eb; --btn-text: #54382b; --note-bg: #fef3e2;
+        }
+        :root.theme-ocean {
+            --bg-main: #f0f8ff; --bg-card: #ffffff; --text-main: #0f4c81; --text-sub: #0284c7;
+            --accent: #0284c7; --accent-gradient: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);
+            --border-color: #bae6fd; --btn-bg: #e0f2fe; --btn-text: #0369a1; --note-bg: #e0f2fe;
+        }
+        :root.theme-forest {
+            --bg-main: #f4f7f5; --bg-card: #ffffff; --text-main: #1b4332; --text-sub: #2d6a4f;
+            --accent: #40916c; --accent-gradient: linear-gradient(135deg, #16a34a 0%, #4ade80 100%);
+            --border-color: #b7e4c7; --btn-bg: #e8f0ec; --btn-text: #1b4332; --note-bg: #dcfce7;
+        }
+        :root.theme-neon {
+            --bg-main: #050505; --bg-card: #18181b; --text-main: #f4f4f5; --text-sub: #a1a1aa;
+            --accent: #c084fc; --accent-gradient: linear-gradient(135deg, #c084fc 0%, #e879f9 100%);
+            --border-color: #27272a; --btn-bg: #27272a; --btn-text: #f4f4f5; --note-bg: #18181b;
+        }
+        :root.theme-oled {
+            --bg-main: #000000; --bg-card: #0a0a0a; --text-main: #ffffff; --text-sub: #737373;
+            --accent: #ffffff; --accent-gradient: linear-gradient(135deg, #ffffff 0%, #e5e5e5 100%);
+            --border-color: #1f1f1f; --btn-bg: #1a1a1a; --btn-text: #ffffff; --note-bg: #0a0a0a;
+        }
+
+        body { background-color: var(--bg-main); color: var(--text-main); transition: background 0.3s, color 0.3s; }
+        .skin-card { background-color: var(--bg-card); border-color: var(--border-color); color: var(--text-main); }
+        .skin-sub { color: var(--text-sub); }
+        .skin-btn { background-color: var(--btn-bg); color: var(--btn-text); border-color: var(--border-color); }
+        .skin-accent-bg { background: var(--accent-gradient); color: #ffffff; }
+        .skin-accent-text { color: var(--accent); }
+        .skin-border { border-color: var(--border-color); }
+        .skin-note { background-color: var(--note-bg); border-color: var(--border-color); }
+        .btn-active:active { transform: scale(0.96); opacity: 0.85; }
+
+        select { background: transparent; color: inherit; }
+        option { background-color: var(--bg-card); color: var(--text-main); }
+    </style>
+</head>
+<body class="flex justify-center items-center min-h-screen p-0 sm:p-4">
+
+    <!-- App 主外殼容器 -->
+    <div class="w-full max-w-md h-[100dvh] sm:h-[min(880px,100dvh)] skin-card sm:rounded-[3rem] shadow-2xl flex flex-col overflow-hidden relative border transition-all" style="height: 100dvh; height: -webkit-fill-available;">
+
+        <!-- 頂部導航列 Header -->
+        <header class="flex flex-col px-5 pt-4 pb-3 skin-card border-b z-20 shrink-0">
+            <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center space-x-3 shrink-0">
+                    <button id="back-btn" class="hidden p-2 skin-sub hover:skin-accent-text transition-colors rounded-full -ml-2" onclick="goBack()">
+                        <i data-lucide="arrow-left" class="w-6 h-6"></i>
+                    </button>
+                    <div class="flex space-x-6 text-3xl font-bold" id="tab-container">
+                        <button id="tab-calc" onclick="switchMainTab('calc')" class="transition-all pb-1 skin-accent-text border-b-4 border-current whitespace-nowrap">計算</button>
+                        <button id="tab-convert" onclick="switchMainTab('convert')" class="transition-all pb-1 skin-sub whitespace-nowrap">換算</button>
+                    </div>
+                    <div id="converter-title" class="hidden text-3xl font-bold skin-text truncate max-w-[180px]">換算</div>
+                </div>
+
+                <div class="flex items-center space-x-2 shrink-0">
+                    <!-- 🎨 皮膚切換按鈕 (彩色調色盤) -->
+                    <button onclick="toggleThemeModal()" title="選擇皮膚"
+                        class="p-2.5 rounded-2xl border border-white/60 shadow-md hover:scale-105 active:scale-95 transition-all flex items-center justify-center shrink-0"
+                        style="background: linear-gradient(135deg, #ffb3c6 0%, #ffd97d 35%, #a0d8ff 70%, #c9a7ff 100%);">
+                        <i data-lucide="palette" class="w-6 h-6 text-white" style="filter: drop-shadow(0 1px 1px rgba(0,0,0,0.25));"></i>
+                    </button>
+
+                    <!-- 🌐 14 國語言選單 (放大字體，防止截斷) -->
+                    <div class="relative flex items-center border skin-border rounded-2xl px-2 py-1.5 skin-btn shadow-sm shrink-0">
+                        <select id="lang-selector" onchange="changeLanguage(this.value)" class="text-base font-bold outline-none cursor-pointer pr-3 border-none bg-transparent whitespace-nowrap min-w-fit">
+                            <option value="zh-TW">繁體中文</option>
+                            <option value="zh-CN">简体中文</option>
+                            <option value="en">English</option>
+                            <option value="ja">日本語</option>
+                            <option value="ko">한국어</option>
+                            <option value="vi">Tiếng Việt</option>
+                            <option value="th">ภาษาไทย</option>
+                            <option value="id">Bahasa Indonesia</option>
+                            <option value="es">Español</option>
+                            <option value="pt">Português</option>
+                            <option value="fr">Français</option>
+                            <option value="de">Deutsch</option>
+                            <option value="ru">Русский</option>
+                            <option value="ar">العربية</option>
+                        </select>
+                        <i data-lucide="chevron-down" class="w-4 h-4 absolute right-1.5 pointer-events-none skin-sub"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 換算分類頁籤列 (順序：度量衡 -> 生活 -> 金融 -> 時間 -> 專業 -> 全部) -->
+            <div id="category-bar" class="hidden mt-3 overflow-x-auto no-scrollbar flex space-x-2.5 pb-1"></div>
+        </header>
+
+        <!-- 主內容視窗 -->
+        <div class="flex-1 flex flex-col overflow-hidden relative">
+
+            <!-- 1. 計算器主頁面 -->
+            <div id="panel-calc" class="flex-1 flex flex-col h-full overflow-y-auto no-scrollbar">
+                <!-- 頂部品牌列 + 工具按鈕 -->
+                <div class="flex items-center justify-between px-5 pt-2 pb-1.5 shrink-0">
+                    <div class="flex items-center gap-2 select-none">
+                        <div class="w-12 h-12 rounded-full flex items-center justify-center shrink-0" style="background: color-mix(in srgb, var(--accent) 16%, transparent);">
+                            <img src="logo.jpg" alt="微光小程序" draggable="false"
+                                 class="w-9 h-9 shrink-0 rounded-full object-cover shadow-sm ring-1 ring-white/20">
+                        </div>
+                        <div class="flex flex-col leading-tight">
+                            <div class="text-xl font-black skin-text tracking-widest">微光小程序</div>
+                            <div class="text-[10px] skin-sub tracking-[0.15em]">生活·簡單·實用</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <button onclick="toggleScientific()" class="text-base font-bold skin-sub skin-btn px-3 py-1.5 rounded-full hover:skin-accent-text transition-colors flex items-center gap-1 shadow-sm border cursor-pointer whitespace-nowrap">
+                            <i data-lucide="flask-conical" class="w-5 h-5"></i>
+                            <span id="sci-btn-text">科學</span>
+                        </button>
+                        <button onclick="openHistoryModal()" class="text-base font-bold skin-sub skin-btn px-3 py-1.5 rounded-full hover:skin-accent-text transition-colors flex items-center gap-1 shadow-sm border cursor-pointer whitespace-nowrap">
+                            <i data-lucide="clock" class="w-5 h-5 shrink-0"></i>
+                            <span id="hist-btn-text" class="whitespace-nowrap">歷史</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 顯示區 (垂直置中) -->
+                <div class="px-6 py-2 flex flex-col justify-center items-end text-right flex-1">
+                    <div id="calc-history-exp" class="skin-sub text-2xl mb-1 min-h-[2.25rem] tracking-wider font-mono"></div>
+                    <div id="calc-display" class="skin-text text-5xl sm:text-6xl font-black tracking-tight break-all font-mono transition-all cursor-pointer active:scale-95" title="點擊複製整條算式" onclick="copyDisplay()">0</div>
+                </div>
+
+                <!-- 計算機鍵盤區 -->
+                <div class="skin-card rounded-t-[2.5rem] border-t p-1.5 flex flex-col gap-1 shadow-2xl mb-24" style="padding-bottom: calc(env(safe-area-inset-bottom) + 1.5rem);">
+                    <!-- 科學按鈕 Drawer -->
+                    <div id="scientific-pad" class="hidden grid grid-cols-5 gap-1.5 mb-1">
+                        <button onclick="calcAppend('sin(')" class="py-1 rounded-xl skin-btn text-sm font-bold border btn-active">sin</button>
+                        <button onclick="calcAppend('cos(')" class="py-1 rounded-xl skin-btn text-sm font-bold border btn-active">cos</button>
+                        <button onclick="calcAppend('tan(')" class="py-1 rounded-xl skin-btn text-sm font-bold border btn-active">tan</button>
+                        <button onclick="calcAppend('(')" class="py-1 rounded-xl skin-btn text-sm font-bold border btn-active">(</button>
+                        <button onclick="calcAppend(')')" class="py-1 rounded-xl skin-btn text-sm font-bold border btn-active">)</button>
+                        <button onclick="calcAppend('log(')" class="py-1 rounded-xl skin-btn text-sm font-bold border btn-active">log</button>
+                        <button onclick="calcAppend('ln(')" class="py-1 rounded-xl skin-btn text-sm font-bold border btn-active">ln</button>
+                        <button onclick="calcAppend('√(')" class="py-1 rounded-xl skin-btn text-sm font-bold border btn-active">√</button>
+                        <button onclick="calcAppend('π')" class="py-1 rounded-xl skin-btn text-sm font-bold border btn-active">π</button>
+                        <button onclick="calcAppend('^')" class="py-1 rounded-xl skin-btn text-sm font-bold border btn-active">xʸ</button>
+                    </div>
+
+                    <!-- 標準數字與算術按鈕 -->
+                    <div class="grid grid-cols-4 gap-1">
+                        <button onclick="calcClear()" class="py-1 rounded-xl skin-btn font-bold text-2xl border btn-active text-red-400">AC</button>
+                        <button onclick="calcDelete()" class="py-1 rounded-xl skin-btn font-bold text-2xl border btn-active flex items-center justify-center"><i data-lucide="delete" class="w-5 h-5"></i></button>
+                        <button onclick="calcAppend('%')" class="py-1 rounded-xl skin-btn font-bold text-2xl border btn-active">%</button>
+                        <button onclick="calcAppend('/')" class="py-1 rounded-xl skin-btn font-bold text-3xl border btn-active skin-accent-text">÷</button>
+
+                        <button onclick="calcAppend('7')" class="py-1 rounded-xl skin-btn font-bold text-3xl border btn-active">7</button>
+                        <button onclick="calcAppend('8')" class="py-1 rounded-xl skin-btn font-bold text-3xl border btn-active">8</button>
+                        <button onclick="calcAppend('9')" class="py-1 rounded-xl skin-btn font-bold text-3xl border btn-active">9</button>
+                        <button onclick="calcAppend('*')" class="py-1 rounded-xl skin-btn font-bold text-3xl border btn-active skin-accent-text">×</button>
+
+                        <button onclick="calcAppend('4')" class="py-1 rounded-xl skin-btn font-bold text-3xl border btn-active">4</button>
+                        <button onclick="calcAppend('5')" class="py-1 rounded-xl skin-btn font-bold text-3xl border btn-active">5</button>
+                        <button onclick="calcAppend('6')" class="py-1 rounded-xl skin-btn font-bold text-3xl border btn-active">6</button>
+                        <button onclick="calcAppend('-')" class="py-1 rounded-xl skin-btn font-bold text-3xl border btn-active skin-accent-text">-</button>
+
+                        <button onclick="calcAppend('1')" class="py-1 rounded-xl skin-btn font-bold text-3xl border btn-active">1</button>
+                        <button onclick="calcAppend('2')" class="py-1 rounded-xl skin-btn font-bold text-3xl border btn-active">2</button>
+                        <button onclick="calcAppend('3')" class="py-1 rounded-xl skin-btn font-bold text-3xl border btn-active">3</button>
+                        <button onclick="calcAppend('+')" class="py-1 rounded-xl skin-btn font-bold text-3xl border btn-active skin-accent-text">+</button>
+
+                        <button onclick="calcAppend('00')" class="py-1 rounded-xl skin-btn font-bold text-2xl border btn-active">00</button>
+                        <button onclick="calcAppend('0')" class="py-1 rounded-xl skin-btn font-bold text-3xl border btn-active">0</button>
+                        <button onclick="calcAppend('.')" class="py-1 rounded-xl skin-btn font-bold text-3xl border btn-active">.</button>
+                        <button onclick="calcCompute()" class="py-1 rounded-xl skin-accent-bg font-black text-3xl shadow-xl btn-active" style="box-shadow: inset 0 1px 0 rgba(255,255,255,0.35), 0 10px 15px -3px rgba(0,0,0,0.15);">=</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. 換算功能網格頁面 -->
+            <div id="panel-convert-menu" class="hidden flex-1 flex flex-col overflow-hidden p-3">
+                <div id="converter-grid" class="grid grid-cols-3 gap-2 flex-1 overflow-y-auto no-scrollbar pb-2 content-start"></div>
+            </div>
+
+            <!-- 3. 換算功能具體頁面 (含大標題、大選單、3 行輸入框與說明卡) -->
+            <div id="panel-converter-detail" class="hidden flex-1 flex flex-col overflow-hidden">
+                <div class="px-6 pt-3 pb-1 flex justify-between items-center text-base skin-sub">
+                    <span id="converter-subtitle" class="font-extrabold text-lg"></span>
+                    <span id="api-status" class="hidden flex items-center gap-1.5 text-emerald-400 font-bold"><span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span> <span id="api-status-text">即時 API 已連線</span></span>
+                </div>
+                <div id="converter-content" class="flex-1 overflow-y-auto no-scrollbar px-6 pb-6 space-y-4"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- 5 款皮膚選擇 Modal -->
+    <div id="theme-modal" class="fixed inset-0 bg-black/60 backdrop-blur-md hidden z-50 flex items-center justify-center p-6 transition-opacity duration-300 opacity-0 pointer-events-none">
+        <div class="skin-card rounded-[2.5rem] p-6 w-full max-w-sm border skin-border flex flex-col gap-4 shadow-2xl transform scale-95 transition-transform duration-300" id="theme-modal-content">
+            <div class="flex items-center justify-between pb-2 border-b skin-border">
+                <h3 class="text-xl font-extrabold flex items-center gap-2">
+                    <i data-lucide="palette" class="w-6 h-6 skin-accent-text"></i>
+                    <span>選擇專屬皮膚</span>
+                </h3>
+                <button onclick="toggleThemeModal()" class="p-2 skin-sub hover:skin-text"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <div class="grid grid-cols-1 gap-3">
+                <button onclick="setTheme('theme-aurora')" class="p-4 rounded-2xl bg-slate-800 text-slate-100 font-bold border border-sky-400/50 flex justify-between items-center text-lg btn-active">
+                    <span>🌟 極光暮光 (Aurora Pro)</span>
+                    <span class="w-4 h-4 rounded-full bg-sky-400"></span>
+                </button>
+                <button onclick="setTheme('theme-latte')" class="p-4 rounded-2xl bg-[#fff8f0] text-[#54382b] font-bold border border-[#ffaa8a] flex justify-between items-center text-lg btn-active">
+                    <span>🌸 櫻花拿鐵 (Warm Latte)</span>
+                    <span class="w-4 h-4 rounded-full bg-[#ffaa8a]"></span>
+                </button>
+                <button onclick="setTheme('theme-ocean')" class="p-4 rounded-2xl bg-[#f0f8ff] text-[#0f4c81] font-bold border border-[#007aff] flex justify-between items-center text-lg btn-active">
+                    <span>🌊 蔚藍海浪 (Ocean Breeze)</span>
+                    <span class="w-4 h-4 rounded-full bg-[#007aff]"></span>
+                </button>
+                <button onclick="setTheme('theme-forest')" class="p-4 rounded-2xl bg-[#f4f7f5] text-[#1b4332] font-bold border border-[#40916c] flex justify-between items-center text-lg btn-active">
+                    <span>🌲 極簡森系 (Forest Zen)</span>
+                    <span class="w-4 h-4 rounded-full bg-[#40916c]"></span>
+                </button>
+                <button onclick="setTheme('theme-neon')" class="p-4 rounded-2xl bg-black text-indigo-200 font-bold border border-purple-500 flex justify-between items-center text-lg btn-active">
+                    <span>💎 星空極致 (Cyber Neon)</span>
+                    <span class="w-4 h-4 rounded-full bg-purple-500"></span>
+                </button>
+                <button onclick="setTheme('theme-oled')" class="p-4 rounded-2xl bg-black text-white font-bold border border-gray-500 flex justify-between items-center text-lg btn-active">
+                    <span>⚫ OLED 純黑 (True Black)</span>
+                    <span class="w-4 h-4 rounded-full bg-white border border-gray-600"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 歷史紀錄 Modal -->
+    <div id="history-modal" class="fixed inset-0 bg-black/60 backdrop-blur-md hidden z-50 flex items-center justify-center p-4 transition-opacity duration-300 opacity-0 pointer-events-none">
+        <div class="skin-card rounded-[2.5rem] w-full max-w-sm max-h-[80vh] flex flex-col shadow-2xl overflow-hidden border skin-border transform scale-95 transition-transform duration-300" id="history-modal-content">
+            <div class="flex items-center justify-between p-5 border-b skin-border">
+                <h3 id="hist-title" class="font-extrabold text-xl skin-text">計算歷史紀錄</h3>
+                <button onclick="closeHistoryModal()" class="skin-sub skin-btn p-2 rounded-full border"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div id="history-list" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
+            <div class="p-4 border-t skin-border flex justify-between items-center skin-card">
+                <button onclick="clearHistory()" id="hist-clear" class="text-red-400 text-base font-bold hover:underline px-2 py-1">清除全部</button>
+                <button onclick="closeHistoryModal()" id="hist-close" class="skin-accent-bg px-6 py-2.5 rounded-xl text-base font-bold shadow-md btn-active">關閉</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast 複製提示浮窗 -->
+    <div id="custom-toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 skin-accent-bg px-6 py-3 rounded-full shadow-2xl transition-all duration-300 opacity-0 pointer-events-none z-50 text-base font-bold tracking-wide"></div>
+
+    <script>
+        // 14 國語言字典包
+        const i18n = {
+            'zh-TW': { 
+                calc: '計算', convert: '換算', sci: '科學', std: '標準',
+                cat_sci: '度量衡', cat_life: '生活', cat_fin: '金融', cat_time: '時間', cat_pro: '專業', cat_all: '全部',
+                length: '長度', weight: '重量', area: '面積', volume: '體積', temp: '溫度', speed: '速度',
+                fuel: '車輛油耗', bmi: 'BMI 計算', shoes: '服飾鞋碼', cooking: '烹飪烘焙',
+                currency: '匯率轉換', travel: '旅遊購物', compound: '複利定額', discount: '折扣計算', tip: '小費分帳', mortgage: '房貸計算',
+                lunar: '農曆國曆', time: '時間轉換', date: '日期計算', date_target: '目標日期', age: '精確年齡',
+                data: '數據儲存', base: '進制轉換', color: '色彩代碼', chineseNum: '大寫數字',
+                history: '歷史紀錄', clear: '清除', close: '關閉', noHistory: '暫無紀錄', copied: '已複製數值' 
+            },
+            'zh-CN': { 
+                calc: '计算', convert: '换算', sci: '科学', std: '标准',
+                cat_sci: '度量衡', cat_life: '生活', cat_fin: '金融', cat_time: '时间', cat_pro: '专业', cat_all: '全部',
+                length: '长度', weight: '重量', area: '面积', volume: '体积', temp: '温度', speed: '速度',
+                fuel: '车辆油耗', bmi: 'BMI', shoes: '服饰鞋码', cooking: '烹饪烘焙',
+                currency: '汇率转换', travel: '旅游购物', compound: '复利定额', discount: '折扣', tip: '小费', mortgage: '房贷',
+                lunar: '农历公历', time: '时间', date: '日期差', date_target: '目标日', age: '精确年龄',
+                data: '数据存储', base: '进制', color: '色彩代码', chineseNum: '大写数字',
+                history: '历史记录', clear: '清除', close: '关闭', noHistory: '无记录', copied: '已复制数值' 
+            },
+            'en': { 
+                calc: 'Calc', convert: 'Convert', sci: 'Sci', std: 'Std',
+                cat_sci: 'Metrics', cat_life: 'Life', cat_fin: 'Finance', cat_time: 'Time', cat_pro: 'Pro', cat_all: 'All',
+                length: 'Length', weight: 'Weight', area: 'Area', volume: 'Volume', temp: 'Temp', speed: 'Speed',
+                fuel: 'Fuel Efficiency', bmi: 'BMI Calc', shoes: 'Shoe Size', cooking: 'Cooking Units',
+                currency: 'Currency FX', travel: 'Travel Shopping', compound: 'Compound Interest', discount: 'Discount', tip: 'Tip & Split', mortgage: 'Mortgage Loan',
+                lunar: 'Lunar Calendar', time: 'Time Units', date: 'Date Diff', date_target: 'Target Date', age: 'Exact Age',
+                data: 'Data Storage', base: 'Programmer Base', color: 'HEX/RGB Color', chineseNum: 'Uppercase Num',
+                history: 'History', clear: 'Clear', close: 'Close', noHistory: 'No history', copied: 'Copied' 
+            },
+            'ja': { 
+                calc: '計算', convert: '換算', sci: '関数', std: '標準',
+                cat_sci: '度量衡', cat_life: '生活', cat_fin: '金融', cat_time: '時間', cat_pro: '専門', cat_all: '全て',
+                length: '長さ', weight: '重さ', area: '面積', volume: '体積', temp: '温度', speed: '速度',
+                fuel: '燃費', bmi: 'BMI', shoes: '靴・服サイズ', cooking: '料理単位',
+                currency: '為替レート', travel: '旅行買い物', compound: '複利計算', discount: '割引計算', tip: '割り勘・チップ', mortgage: 'ローン計算',
+                lunar: '旧暦・カレンダー', time: '時間換算', date: '日付差分', date_target: '目標日推算', age: '正確な年齢',
+                data: 'データ容量', base: '進数変換', color: 'カラーコード', chineseNum: '漢数字大写',
+                history: '計算履歴', clear: 'クリア', close: '閉じる', noHistory: '履歴なし', copied: 'コピー済み' 
+            },
+            'ko': { 
+                calc: '계산', convert: '환산', sci: '공학', std: '표준',
+                cat_sci: '도량형', cat_life: '생활', cat_fin: '금융', cat_time: '시간', cat_pro: '전문', cat_all: '전체',
+                length: '길이', weight: '무게', area: '면적', volume: '부피', temp: '온도', speed: '속도',
+                fuel: '연비', bmi: 'BMI', shoes: '신발/옷', cooking: '요리',
+                currency: '환율', travel: '여행쇼핑', compound: '복리', discount: '할인', tip: '팁/더치페이', mortgage: '대출',
+                lunar: '음력달력', time: '시간', date: '날짜차이', date_target: '목표일', age: '정확한나이',
+                data: '데이터', base: '진수변환', color: '색상코드', chineseNum: '한자대문자',
+                history: '계산기록', clear: '지우기', close: '닫기', noHistory: '없음', copied: '복사됨' 
+            },
+            'vi': { calc: 'Tính', convert: 'Đổi', sci: 'KH', std: 'Chuẩn', cat_sci: 'Đo lường', cat_life: 'Đời sống', cat_fin: 'Tài chính', cat_time: 'Thời gian', cat_pro: 'Chuyên nghiệp', cat_all: 'Tất cả', length: 'Chiều dài', weight: 'Trọng lượng', area: 'Diện tích', volume: 'Thể tích', temp: 'Nhiệt độ', speed: 'Tốc độ', fuel: 'Nhiên liệu', bmi: 'BMI', shoes: 'Cỡ giày', cooking: 'Nấu ăn', currency: 'Tỷ giá', travel: 'Du lịch', compound: 'Lãi kép', discount: 'Giảm giá', tip: 'Tiền típ', mortgage: 'Khoản vay', lunar: 'Âm lịch', time: 'Thời gian', date: 'Khoảng ngày', date_target: 'Ngày mục tiêu', age: 'Tuổi chính xác', data: 'Dữ liệu', base: 'Hệ cơ số', color: 'Màu sắc', chineseNum: 'Số chữ Hán', history: 'Lịch sử', clear: 'Xóa', close: 'Đóng', noHistory: 'Chưa có lịch sử', copied: 'Đã sao chép' },
+            'th': { calc: 'คำนวณ', convert: 'แปลง', sci: 'วิทย์', std: 'ปกติ', cat_sci: 'มาตรวัด', cat_life: 'ชีวิต', cat_fin: 'การเงิน', cat_time: 'เวลา', cat_pro: 'มืออาชีพ', cat_all: 'ทั้งหมด', length: 'ความยาว', weight: 'น้ำหนัก', area: 'พื้นที่', volume: 'ปริมาตร', temp: 'อุณหภูมิ', speed: 'ความเร็ว', fuel: 'เชื้อเพลิง', bmi: 'BMI', shoes: 'ขนาดรองเท้า', cooking: 'ทำอาหาร', currency: 'อัตราแลกเปลี่ยน', travel: 'ช้อปปิ้ง', compound: 'ดอกเบี้ยทบต้น', discount: 'ส่วนลด', tip: 'ทิป', mortgage: 'สินเชื่อ', lunar: 'ปฏิทินจันทรคติ', time: 'เวลา', date: 'ผลต่างวัน', date_target: 'เป้าหมายวัน', age: 'อายุแม่นยำ', data: 'ข้อมูล', base: 'ฐานเลข', color: 'สี', chineseNum: 'ตัวเลขจีน', history: 'ประวัติ', clear: 'ล้าง', close: 'ปิด', noHistory: 'ไม่มีประวัติ', copied: 'คัดลอกแล้ว' },
+            'id': { calc: 'Hitung', convert: 'Konversi', sci: 'Ilmiah', std: 'Std', cat_sci: 'Metrik', cat_life: 'Kehidupan', cat_fin: 'Keuangan', cat_time: 'Waktu', cat_pro: 'Pro', cat_all: 'Semua', length: 'Panjang', weight: 'Berat', area: 'Luas', volume: 'Volume', temp: 'Suhu', speed: 'Kecepatan', fuel: 'Bahan Bakar', bmi: 'BMI', shoes: 'Ukuran Sepatu', cooking: 'Memasak', currency: 'Mata Uang', travel: 'Belanja Wisata', compound: 'Bunga Majemuk', discount: 'Diskon', tip: 'Tip & Bagi', mortgage: 'KPR', lunar: 'Tanggal Lunar', time: 'Waktu', date: 'Selisih Hari', date_target: 'Tanggal Target', age: 'Usia Pasti', data: 'Data', base: 'Basis', color: 'Warna', chineseNum: 'Angka Chino', history: 'Riwayat', clear: 'Hapus', close: 'Tutup', noHistory: 'Tidak ada riwayat', copied: 'Disalin' },
+            'es': { calc: 'Calc', convert: 'Conv', sci: 'Cient', std: 'Est', cat_sci: 'Métricas', cat_life: 'Vida', cat_fin: 'Finanzas', cat_time: 'Tiempo', cat_pro: 'Pro', cat_all: 'Todo', length: 'Longitud', weight: 'Peso', area: 'Área', volume: 'Volumen', temp: 'Temperatura', speed: 'Velocidad', fuel: 'Combustible', bmi: 'BMI', shoes: 'Talla Calzado', cooking: 'Cocina', currency: 'Divisas', travel: 'Compras Viaje', compound: 'Interés Compuesto', discount: 'Descuento', tip: 'Propina', mortgage: 'Hipoteca', lunar: 'Fecha Lunar', time: 'Tiempo', date: 'Diferencia Días', date_target: 'Fecha Objetivo', age: 'Edad Exacta', data: 'Datos', base: 'Base', color: 'Color', chineseNum: 'Número Chino', history: 'Historial', clear: 'Borrar', close: 'Cerrar', noHistory: 'Sin historial', copied: 'Copiado' },
+            'pt': { calc: 'Calc', convert: 'Converter', sci: 'Cient', std: 'Padrão', cat_sci: 'Métricas', cat_life: 'Vida', cat_fin: 'Finanças', cat_time: 'Tempo', cat_pro: 'Pro', cat_all: 'Tudo', length: 'Comprimento', weight: 'Peso', area: 'Área', volume: 'Volume', temp: 'Temperatura', speed: 'Velocidade', fuel: 'Combustível', bmi: 'BMI', shoes: 'Tamanho Calçado', cooking: 'Culinária', currency: 'Moeda', travel: 'Viagem', compound: 'Juros Compostos', discount: 'Desconto', tip: 'Gorjeta', mortgage: 'Hipoteca', lunar: 'Data Lunar', time: 'Tempo', date: 'Diferença Dias', date_target: 'Data Alvo', age: 'Idade Exata', data: 'Dados', base: 'Base', color: 'Cor', chineseNum: 'Número Chinês', history: 'Histórico', clear: 'Limpar', close: 'Fechar', noHistory: 'Sem histórico', copied: 'Copiado' },
+            'fr': { calc: 'Calc', convert: 'Convert', sci: 'Sci', std: 'Std', cat_sci: 'Métrique', cat_life: 'Vie', cat_fin: 'Finance', cat_time: 'Temps', cat_pro: 'Pro', cat_all: 'Tout', length: 'Longueur', weight: 'Poids', area: 'Surface', volume: 'Volume', temp: 'Température', speed: 'Vitesse', fuel: 'Carburant', bmi: 'IMC', shoes: 'Pointure', cooking: 'Cuisine', currency: 'Devise', travel: 'Voyage', compound: 'Intérêts Composés', discount: 'Remise', tip: 'Pourboire', mortgage: 'Prêt Immo', lunar: 'Date Lunaire', time: 'Temps', date: 'Différence Jours', date_target: 'Date Cible', age: 'Âge Exact', data: 'Données', base: 'Base', color: 'Couleur', chineseNum: 'Chiffre Chinois', history: 'Historique', clear: 'Effacer', close: 'Fermer', noHistory: 'Aucun historique', copied: 'Copié' },
+            'de': { calc: 'Rech', convert: 'Umwandeln', sci: 'Wiss', std: 'Std', cat_sci: 'Metrik', cat_life: 'Leben', cat_fin: 'Finanzen', cat_time: 'Zeit', cat_pro: 'Pro', cat_all: 'Alle', length: 'Länge', weight: 'Gewicht', area: 'Fläche', volume: 'Volumen', temp: 'Temperatur', speed: 'Geschwindigkeit', fuel: 'Kraftstoff', bmi: 'BMI', shoes: 'Schuhgröße', cooking: 'Kochen', currency: 'Währung', travel: 'Reise-Einkauf', compound: 'Zinseszins', discount: 'Rabatt', tip: 'Trinkgeld', mortgage: 'Hypothek', lunar: 'Monddatum', time: 'Zeit', date: 'Tagesdifferenz', date_target: 'Zieldatum', age: 'Genaue Alter', data: 'Daten', base: 'Basis', color: 'Farbe', chineseNum: 'Chinesische Zahl', history: 'Verlauf', clear: 'Löschen', close: 'Schließen', noHistory: 'Kein Verlauf', copied: 'Kopiert' },
+            'ru': { calc: 'Кальк', convert: 'Конверт', sci: 'Науч', std: 'Станд', cat_sci: 'Метрика', cat_life: 'Жизнь', cat_fin: 'Финансы', cat_time: 'Время', cat_pro: 'Про', cat_all: 'Все', length: 'Длина', weight: 'Вес', area: 'Площадь', volume: 'Объем', temp: 'Температура', speed: 'Скорость', fuel: 'Топливо', bmi: 'ИМТ', shoes: 'Размер обуви', cooking: 'Кулинария', currency: 'Валюта', travel: 'Покупки', compound: 'Сложные проценты', discount: 'Скидка', tip: 'Чаевые', mortgage: 'Ипотека', lunar: 'Лунный календарь', time: 'Время', date: 'Разница дат', date_target: 'Целевая дата', age: 'Точный возраст', data: 'Данные', base: 'Основание', color: 'Цвет', chineseNum: 'Китайские цифры', history: 'История', clear: 'Очистить', close: 'Закрыть', noHistory: 'Нет истории', copied: 'Скопировано' },
+            'ar': { calc: 'حساب', convert: 'تحويل', sci: 'علمي', std: 'قياسي', cat_sci: 'المقاييس', cat_life: 'الحياة', cat_fin: 'المالية', cat_time: 'الوقت', cat_pro: 'محترف', cat_all: 'الكل', length: 'الطول', weight: 'الوزن', area: 'المساحة', volume: 'الحجم', temp: 'الحرارة', speed: 'السرعة', fuel: 'الوقود', bmi: 'مؤشر الكتلة', shoes: 'مقاس الحذاء', cooking: 'الطبخ', currency: 'العملات', travel: 'سفر وشراء', compound: 'فائدة مركبة', discount: 'خصم', tip: 'بقشيش', mortgage: 'قرض عقاري', lunar: 'التاريخ الهجري/القمري', time: 'الوقت', date: 'فرق الأيام', date_target: 'التاريخ المستهدف', age: 'العمر الدقيق', data: 'بيانات', base: 'الأساس', color: 'اللون', chineseNum: 'الأرقام الصينية', history: 'السجل', clear: 'مسح', close: 'إغلاق', noHistory: 'لا يوجد سجل', copied: 'تم النسخ' }
+        };
+
+        // 操作說明提示文字字典
+        const toolNotes = {
+            currency: "數據來源：Open Exchange Rates 即時 API，每小時自動更新。實際結算匯率請以各銀行牌告為準。",
+            travel: "數據來源：Open Exchange Rates 即時 API。即時計算海外購物標價與折合本幣金額，方便秒瞄價格。",
+            bmi: "衛福部成人 BMI 標準：過輕 (<18.5)、正常 (18.5-24)、過重 (24-27)、輕度肥胖 (27-30)、中度肥胖 (30-35)、重度肥胖 (≥35)。",
+            mortgage: "採用本息平均攤還法（等額本息）試算：每月還款總金額固定。試算結果僅供個人財務規劃參考。",
+            compound: "按月複利計算。預估收益非投資保證，實際回報受市場波動影響，僅供規劃參考。",
+            fuel: "支援 km/L (每公升公里數)、L/100km (百公里油耗) 與 MPG (美制每加侖英里數) 三向智慧連動。",
+            lunar: "支援 1900-2100 年國曆與農曆精準對照，自動計算生肖、年份天干地支與西洋星座。",
+            shoes: "對照美碼(US)、英碼(UK)、歐碼(EU)與日碼/公分(JP)。不同品牌間可能存在微幅版型規格差異。",
+            cooking: "標準容量對照：1美制杯 ≈ 240ml，1大匙(Tbsp) ≈ 15ml，1小匙(Tsp) ≈ 5ml。麵粉與糖已按比重換算。",
+            base: "程式開發專用進制轉換器。支援 2 進制 (BIN)、8 進制 (OCT)、10 進制 (DEC) 與 16 進制 (HEX) 即時互轉。",
+            discount: "購物折扣計算：輸入商品原價與折數（如 85 折或 15% off），自動算出折後總價與省下的總金額。",
+            tip: "餐廳小費與平分帳單：輸入消費總額、小費百分比與人數，自動算出小費總額與每人應付金額。",
+            length: '國際標準長度單位換算，支援公尺、公里、公分、英里、碼、英尺與英吋即時對照。',
+            weight: '國際標準重量換算，支援公斤、公克、磅、盎司與台灣在地台斤、台兩。',
+            area: '土地與建築面積單位換算，支援平方公尺、坪、甲、公頃、英畝與平方英尺。',
+            volume: '容量與體積單位換算，支援公升、毫升、立方公尺、美制加侖與液體盎司。',
+            temp: '國際溫度單位換算，支援攝氏 (°C)、華氏 (°F) 與熱力學凱氏 (K) 溫標。',
+            speed: '速度與速率單位換算，支援公里/小時、公尺/秒、英里/小時、海里節 (knot) 與馬赫 (Mach)。',
+            time: '時間單位換算，支援年、月、天、小時、分鐘與秒數互轉。',
+            date: '日期相差天數計算：輸入開始日與結束日，精確算出中間相隔的總天數。',
+            date_target: '目標日期推算：從基準日開始，往前或往後推算指定天數後之確切年月日。',
+            age: '精確年齡計算：輸入生日，精算出生至今的幾歲、幾個月、幾天，以及距離下次生日剩餘天數。',
+            data: '數位數據儲存容量換算，基於 1024 進制換算 (Byte, KB, MB, GB, TB)。',
+            color: '色碼轉換工具，支援 HEX 16進制碼與 RGB 即時互轉與顏色預覽。',
+            chineseNum: '銀行支票與財務合約專用大寫數字轉換器，避免塗改與財務爭議。'
+        };
+
+        let currentLang = localStorage.getItem('app_lang') || 'zh-TW';
+        let currentCategory = 'sci';
+        let activeConverter = null;
+        let currentMainTab = 'calc';
+
+        // 換算項目分類 (依序：度量衡 -> 生活 -> 金融 -> 時間 -> 專業)
+        const converterItems = [
+            // 度量衡 (sci)
+            { id: 'length', cat: 'sci', icon: 'ruler' },
+            { id: 'weight', cat: 'sci', icon: 'anchor' },
+            { id: 'area', cat: 'sci', icon: 'grid' },
+            { id: 'volume', cat: 'sci', icon: 'box' },
+            { id: 'temp', cat: 'sci', icon: 'thermometer' },
+            { id: 'speed', cat: 'sci', icon: 'zap' },
+
+            // 生活 (life)
+            { id: 'fuel', cat: 'life', icon: 'truck' },
+            { id: 'bmi', cat: 'life', icon: 'activity' },
+            { id: 'shoes', cat: 'life', icon: 'shopping-bag' },
+            { id: 'cooking', cat: 'life', icon: 'utensils' },
+            { id: 'discount', cat: 'life', icon: 'percent' },
+            { id: 'tip', cat: 'life', icon: 'receipt' },
+
+            // 金融 (fin)
+            { id: 'currency', cat: 'fin', icon: 'dollar-sign' },
+            { id: 'travel', cat: 'fin', icon: 'plane' },
+            { id: 'mortgage', cat: 'fin', icon: 'home' },
+            { id: 'compound', cat: 'fin', icon: 'trending-up' },
+
+            // 時間 (time)
+            { id: 'lunar', cat: 'time', icon: 'moon' },
+            { id: 'time', cat: 'time', icon: 'clock' },
+            { id: 'date', cat: 'time', icon: 'calendar-days' },
+            { id: 'date_target', cat: 'time', icon: 'calendar-check' },
+            { id: 'age', cat: 'time', icon: 'gift' },
+
+            // 專業 (pro)
+            { id: 'base', cat: 'pro', icon: 'binary' },
+            { id: 'color', cat: 'pro', icon: 'palette' },
+            { id: 'data', cat: 'pro', icon: 'hard-drive' },
+            { id: 'chineseNum', cat: 'pro', icon: 'file-text' }
+        ];
+
+        // 匯率數據與 API 抓取
+        let currencyRates = { USD: 1, TWD: 32.5, JPY: 155.0, CNY: 7.23, EUR: 0.92, GBP: 0.79, KRW: 1350, HKD: 7.82, AUD: 1.52, SGD: 1.35, THB: 36.5, VND: 25400, CAD: 1.37, CHF: 0.90, NZD: 1.65 };
+        let availableCurrencies = Object.keys(currencyRates);
+        let apiLastUpdateText = "即時 API 已連線";
+
+        async function fetchRealRates() {
+            try {
+                const res = await fetch('https://open.er-api.com/v6/latest/USD');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.rates) {
+                        currencyRates = data.rates;
+                        availableCurrencies = Object.keys(currencyRates);
+                        let updateTime = data.time_last_update_utc ? new Date(data.time_last_update_utc) : new Date();
+                        let timeStr = `${updateTime.getFullYear()}-${String(updateTime.getMonth()+1).padStart(2,'0')}-${String(updateTime.getDate()).padStart(2,'0')} ${String(updateTime.getHours()).padStart(2,'0')}:${String(updateTime.getMinutes()).padStart(2,'0')}`;
+                        apiLastUpdateText = `即時 API • 更新於: ${timeStr}`;
+                        const statusEl = document.getElementById('api-status-text');
+                        if (statusEl) statusEl.innerText = apiLastUpdateText;
+                        if (activeConverter === 'currency' || activeConverter === 'travel') do3RowConvert(activeConverter, 1);
+                    }
+                }
+            } catch (e) {
+                console.warn('API 抓取失敗，使用內建快取匯率', e);
+            }
+        }
+
+        function refreshIcons() {
+            setTimeout(() => {
+                if (typeof lucide !== 'undefined' && lucide.createIcons) {
+                    lucide.createIcons();
+                }
+            }, 50);
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchRealRates();
+            document.getElementById('lang-selector').value = currentLang;
+            const savedSkin = localStorage.getItem('app_skin') || 'latte'; // 新使用者預設櫻花拿鐵
+            setTheme(`theme-${savedSkin}`, false);
+            changeLanguage(currentLang);
+            refreshIcons();
+
+            // 分類列：桌面滑鼠垂直滾輪 → 橫向捲動
+            const catBar = document.getElementById('category-bar');
+            catBar.addEventListener('wheel', (e) => {
+                if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+                    catBar.scrollLeft += e.deltaY;
+                    e.preventDefault();
+                }
+            }, { passive: false });
+        });
+
+        // 皮膚控制
+        function toggleThemeModal() {
+            const modal = document.getElementById('theme-modal');
+            const isHidden = modal.classList.contains('hidden');
+            if (isHidden) {
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    modal.classList.remove('opacity-0', 'pointer-events-none');
+                    document.getElementById('theme-modal-content').classList.remove('scale-95');
+                }, 10);
+            } else {
+                document.getElementById('theme-modal-content').classList.add('scale-95');
+                modal.classList.add('opacity-0', 'pointer-events-none');
+                setTimeout(() => modal.classList.add('hidden'), 300);
+            }
+            refreshIcons();
+        }
+
+        function setTheme(themeClass, closeModal = true) {
+            document.documentElement.classList.remove('theme-aurora','theme-latte','theme-ocean','theme-forest','theme-neon','theme-oled');
+            document.documentElement.classList.add(themeClass);
+            const skinName = themeClass.replace('theme-', '');
+            localStorage.setItem('app_skin', skinName);
+            if (closeModal) toggleThemeModal();
+        }
+
+        // 主頁面 Tab 切換
+        function switchMainTab(tab) {
+            currentMainTab = tab;
+            document.getElementById('panel-calc').classList.add('hidden');
+            document.getElementById('panel-convert-menu').classList.add('hidden');
+            document.getElementById('panel-converter-detail').classList.add('hidden');
+            document.getElementById('back-btn').classList.add('hidden');
+            document.getElementById('category-bar').classList.add('hidden');
+            document.getElementById('tab-container').classList.add('hidden');
+            document.getElementById('converter-title').classList.add('hidden');
+
+            if (tab === 'calc') {
+                document.getElementById('tab-container').classList.remove('hidden');
+                const panel = document.getElementById('panel-calc');
+                panel.classList.remove('hidden');
+                void panel.offsetWidth;
+                panel.classList.add('panel-enter');
+                document.getElementById('tab-calc').className = 'transition-all pb-1 skin-accent-text border-b-4 border-current whitespace-nowrap';
+                document.getElementById('tab-convert').className = 'transition-all pb-1 skin-sub whitespace-nowrap';
+                activeConverter = null;
+            } else if (tab === 'convert') {
+                document.getElementById('tab-container').classList.remove('hidden');
+                const panel = document.getElementById('panel-convert-menu');
+                panel.classList.remove('hidden');
+                void panel.offsetWidth;
+                panel.classList.add('panel-enter');
+                document.getElementById('category-bar').classList.remove('hidden');
+                document.getElementById('tab-convert').className = 'transition-all pb-1 skin-accent-text border-b-4 border-current whitespace-nowrap';
+                document.getElementById('tab-calc').className = 'transition-all pb-1 skin-sub whitespace-nowrap';
+                activeConverter = null;
+                renderCategories();
+                renderConverterMenu();
+            }
+            refreshIcons();
+        }
+
+        function goBack() {
+            if (activeConverter) switchMainTab('convert');
+        }
+
+        function changeLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('app_lang', lang);
+            const txt = i18n[lang] || i18n['zh-TW'];
+
+            document.getElementById('tab-calc').innerText = txt.calc;
+            document.getElementById('tab-convert').innerText = txt.convert;
+            document.getElementById('hist-title').innerText = txt.history;
+            document.getElementById('hist-clear').innerText = txt.clear;
+            document.getElementById('hist-close').innerText = txt.close;
+            document.getElementById('sci-btn-text').innerText = isScientific ? (txt.std || '標準') : txt.sci;
+            document.getElementById('hist-btn-text').innerText = txt.history;
+
+            renderCategories();
+            renderConverterMenu();
+            if (activeConverter) openConverter(activeConverter);
+            refreshIcons();
+        }
+
+        function renderCategories() {
+            const bar = document.getElementById('category-bar');
+            const cats = ['sci', 'life', 'fin', 'time', 'pro', 'all'];
+            const txt = i18n[currentLang] || i18n['zh-TW'];
+            bar.innerHTML = cats.map(c =>
+                `<button onclick="setCategory('${c}')" class="px-5 py-2.5 rounded-2xl text-xl font-extrabold transition-all whitespace-nowrap border ${currentCategory === c ? 'skin-accent-bg border-transparent shadow-md' : 'skin-btn skin-sub'}">${txt['cat_'+c]}</button>`
+            ).join('');
+        }
+
+        function setCategory(cat) {
+            currentCategory = cat;
+            renderCategories();
+            renderConverterMenu();
+        }
+
+        function renderConverterMenu() {
+            const grid = document.getElementById('converter-grid');
+            const txt = i18n[currentLang] || i18n['zh-TW'];
+            grid.innerHTML = converterItems
+                .filter(item => currentCategory === 'all' || item.cat === currentCategory)
+                .map(item => `
+                <div onclick="openConverter('${item.id}')" class="skin-card p-4 rounded-2xl flex flex-col items-center justify-center cursor-pointer btn-active shadow-sm">
+                    <div class="w-16 h-16 rounded-xl flex items-center justify-center skin-accent-text mb-2" style="background: color-mix(in srgb, var(--accent) 14%, transparent);">
+                        <i data-lucide="${item.icon}" class="w-8 h-8"></i>
+                    </div>
+                    <span class="text-xl font-bold skin-text text-center truncate w-full">${txt[item.id] || item.id}</span>
+                </div>
+            `).join('') + `
+                <div class="col-span-3 flex items-center justify-center gap-2 pt-32 pb-4 select-none">
+                    <img src="logo.jpg" alt="微光小程序" draggable="false"
+                         class="w-20 h-20 rounded-full object-cover shadow-lg">
+                    <span class="text-2xl font-black skin-text tracking-widest">微光小程序</span>
+                </div>
+            `;
+            refreshIcons();
+        }
+
+        /* ===== 計算機引擎邏輯 ===== */
+        let calcInput = '0';
+        let calcHistoryExp = '';
+        let historyRecords = JSON.parse(localStorage.getItem('calc_history_data') || '[]');
+        let isScientific = false;
+        let isEquationComplete = false;
+
+        function toggleScientific() {
+            isScientific = !isScientific;
+            const pad = document.getElementById('scientific-pad');
+            const txt = i18n[currentLang] || i18n['zh-TW'];
+            if (isScientific) {
+                pad.classList.remove('hidden');
+                document.getElementById('sci-btn-text').innerText = txt.std || '標準';
+            } else {
+                pad.classList.add('hidden');
+                document.getElementById('sci-btn-text').innerText = txt.sci || '科學';
+            }
+            refreshIcons();
+        }
+
+        function updateCalcDisplay() {
+            document.getElementById('calc-display').innerText = calcInput;
+            document.getElementById('calc-history-exp').innerText = calcHistoryExp;
+        }
+
+        function calcAppend(val) {
+            if (isEquationComplete) {
+                if (['+', '-', '*', '/', '%', '^'].includes(val)) {
+                    calcInput += val;
+                } else {
+                    calcInput = val;
+                }
+                calcHistoryExp = '';
+                isEquationComplete = false;
+                updateCalcDisplay();
+                return;
+            }
+
+            if (calcInput === '0' && !['+', '-', '*', '/', '%', '.', '^'].includes(val)) calcInput = val;
+            else calcInput += val;
+            updateCalcDisplay();
+        }
+
+        function calcClear() { calcInput = '0'; calcHistoryExp = ''; isEquationComplete = false; updateCalcDisplay(); }
+        function calcDelete() { 
+            if (isEquationComplete) return;
+            calcInput = calcInput.length > 1 ? calcInput.slice(0, -1) : '0'; 
+            updateCalcDisplay(); 
+        }
+
+        function calcCompute() {
+            try {
+                let expr = calcInput.replace(/×/g, '*').replace(/÷/g, '/');
+                expr = expr.replace(/sin\(/g, 'Math.sin((Math.PI/180)*')
+                           .replace(/cos\(/g, 'Math.cos((Math.PI/180)*')
+                           .replace(/tan\(/g, 'Math.tan((Math.PI/180)*')
+                           .replace(/log\(/g, 'Math.log10(')
+                           .replace(/ln\(/g, 'Math.log(')
+                           .replace(/√\(/g, 'Math.sqrt(')
+                           .replace(/π/g, 'Math.PI')
+                           .replace(/e/g, 'Math.E')
+                           .replace(/\^/g, '**');
+
+                let openCount = (expr.match(/\(/g) || []).length;
+                let closeCount = (expr.match(/\)/g) || []).length;
+                expr += ')'.repeat(Math.max(0, openCount - closeCount));
+
+                let result = Function('"use strict";return (' + expr + ')')();
+                if(!isFinite(result) || isNaN(result)) throw new Error("Err");
+                result = Number.isInteger(result) ? result.toString() : parseFloat(result.toFixed(8)).toString();
+
+                let record = `${calcInput.replace(/\*/g, '×').replace(/\//g, '÷')} = ${result}`;
+                historyRecords.unshift(record);
+                if (historyRecords.length > 30) historyRecords.pop();
+                localStorage.setItem('calc_history_data', JSON.stringify(historyRecords));
+
+                calcHistoryExp = calcInput.replace(/\*/g, '×').replace(/\//g, '÷') + ' =';
+                calcInput = result;
+                isEquationComplete = true;
+                updateCalcDisplay();
+            } catch (e) { showToast('算式運算錯誤'); }
+        }
+
+        function copyDisplay() {
+            let textToCopy = calcInput;
+            if (calcHistoryExp) {
+                textToCopy = calcHistoryExp + ' ' + calcInput;
+            }
+            const el = document.createElement('textarea');
+            el.value = textToCopy;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            showToast('已複製成功');
+        }
+
+        /* ===== 單位與換算對照比例數據 ===== */
+        const unitData = {
+            length: { units: { m: '公尺 (m)', km: '公里 (km)', cm: '公分 (cm)', mm: '公釐 (mm)', mi: '英里 (mi)', yd: '碼 (yd)', ft: '英尺 (ft)', in: '英吋 (in)' }, ratios: { m: 1, km: 1000, cm: 0.01, mm: 0.001, mi: 1609.34, yd: 0.9144, ft: 0.3048, in: 0.0254 } },
+            weight: { units: { kg: '公斤 (kg)', g: '公克 (g)', t: '公噸 (t)', lb: '磅 (lb)', oz: '盎司 (oz)', jin_tw: '台斤', liang_tw: '台兩' }, ratios: { kg: 1, g: 0.001, t: 1000, lb: 0.453592, oz: 0.028349, jin_tw: 0.6, liang_tw: 0.0375 } },
+            area: { units: { sqm: '平方公尺', sqkm: '平方公里', ha: '公頃', a: '公畝', acre: '英畝', ping: '坪', jia: '甲', sqft: '平方英尺' }, ratios: { sqm: 1, sqkm: 1e6, ha: 10000, a: 100, acre: 4046.85, ping: 3.30578, jia: 9699.17, sqft: 0.0929 } },
+            volume: { units: { l: '公升 (L)', ml: '毫升 (mL)', cubm: '立方公尺', gal: '加侖 (gal)', oz: '液體盎司' }, ratios: { l: 1, ml: 0.001, cubm: 1000, gal: 3.785, oz: 0.02957 } },
+            speed: { units: { kmh: '公里/時', ms: '公尺/秒', mph: '英里/時', knot: '節', mach: '馬赫' }, ratios: { kmh: 1, ms: 3.6, mph: 1.609, knot: 1.852, mach: 1225 } },
+            data: { units: { b: 'Byte', kb: 'KB', mb: 'MB', gb: 'GB', tb: 'TB' }, ratios: { b: 1, kb: 1024, mb: 1048576, gb: 1073741824, tb: 1099511627776 } },
+            time: { units: { yr: '年', mon: '月', d: '天', h: '小時', min: '分鐘', s: '秒' }, ratios: { yr: 31536000, mon: 2628000, d: 86400, h: 3600, min: 60, s: 1 } },
+            shoes: { units: { jp: 'JP (公分)', us: 'US (男/中性)', uk: 'UK', eu: 'EU (歐碼)' }, ratios: { jp: 1, us: 1, uk: 1, eu: 1 } },
+            fuel: { units: { kml: 'km/L', l100: 'L/100km', mpg: 'MPG(US)' }, ratios: { kml: 1, l100: 1, mpg: 1 } },
+            cooking: { units: { cup: '杯 (Cup 240ml)', tbsp: '大匙 (Tbsp)', tsp: '小匙 (Tsp)', ml: '液體毫升 (ml)', flour_g: '麵粉 (g)', sugar_g: '糖 (g)' }, ratios: { ml: 1, cup: 240, tbsp: 15, tsp: 5, flour_g: 1.92, sugar_g: 1.2 } }
+        };
+
+        function generateOptions(unitsObj, isCurrency = false) {
+            if (isCurrency) {
+                const popular = ['USD', 'TWD', 'JPY', 'CNY', 'EUR', 'GBP', 'KRW', 'HKD', 'AUD', 'SGD', 'THB', 'VND', 'CAD', 'CHF', 'NZD'];
+                let html = popular.map(c => currencyRates[c] ? `<option value="${c}">${c}</option>` : '').join('');
+                html += `<option disabled>──────────</option>`;
+                return html + availableCurrencies.filter(c => !popular.includes(c)).map(c => `<option value="${c}">${c}</option>`).join('');
+            }
+            return Object.keys(unitsObj).map(k => `<option value="${k}">${unitsObj[k]}</option>`).join('');
+        }
+
+        function renderNoteCard(type) {
+            const noteText = toolNotes[type] || '隨點隨算，即時連動對照。';
+            return `
+                <div class="skin-note p-5 rounded-3xl border skin-border flex items-start space-x-3 mt-5 shadow-sm">
+                    <div class="text-2xl pt-0.5">💡</div>
+                    <div class="flex-1">
+                        <h5 class="text-base font-extrabold skin-accent-text mb-1">操作說明與提示</h5>
+                        <p class="text-base skin-sub leading-relaxed font-semibold">${noteText}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function render3RowUI(type, optionsHTML) {
+            return `
+                <div class="space-y-4 pt-1">
+                    ${[1, 2, 3].map(i => `
+                        <div class="skin-card p-4 rounded-3xl border skin-border shadow-sm flex items-center justify-between">
+                            <div class="relative flex items-center w-40 border-r skin-border pr-2">
+                                <select id="sel-${i}" onchange="do3RowConvert('${type}', 1)" class="w-full font-extrabold text-base sm:text-lg skin-text bg-transparent focus:outline-none appearance-none cursor-pointer pr-5 truncate">${optionsHTML}</select>
+                                <i data-lucide="chevron-down" class="w-5 h-5 skin-sub absolute right-1 pointer-events-none"></i>
+                            </div>
+                            <input id="val-${i}" type="number" value="${i===1 ? '1' : ''}" oninput="do3RowConvert('${type}', ${i})" class="flex-1 w-full bg-transparent text-right font-mono font-extrabold text-2xl sm:text-3xl skin-text focus:outline-none pl-3">
+                        </div>
+                    `).join('')}
+                    ${renderNoteCard(type)}
+                </div>
+            `;
+        }
+
+        function do3RowConvert(type, sourceIndex) {
+            const vals = [document.getElementById('val-1'), document.getElementById('val-2'), document.getElementById('val-3')];
+            const sels = [document.getElementById('sel-1')?.value, document.getElementById('sel-2')?.value, document.getElementById('sel-3')?.value];
+            const sourceInput = vals[sourceIndex - 1];
+            if (!sourceInput) return;
+
+            let num = parseFloat(sourceInput.value);
+            if (isNaN(num)) { vals.forEach((v, idx) => { if (idx !== sourceIndex - 1) v.value = ''; }); return; }
+
+            if (type === 'currency') {
+                let baseUSD = num / (currencyRates[sels[sourceIndex - 1]] || 1);
+                vals.forEach((v, idx) => { if (idx !== sourceIndex - 1) { let r = baseUSD * (currencyRates[sels[idx]] || 1); v.value = r > 10 ? r.toFixed(2) : r.toFixed(4); }});
+            } else if (type === 'temp') {
+                let baseC = sels[sourceIndex - 1] === 'c' ? num : (sels[sourceIndex - 1] === 'f' ? (num - 32) * 5/9 : num - 273.15);
+                vals.forEach((v, idx) => {
+                    if (idx !== sourceIndex - 1) {
+                        let t = sels[idx]; v.value = (t === 'c' ? baseC : (t === 'f' ? (baseC * 9/5) + 32 : baseC + 273.15)).toFixed(2);
+                    }
+                });
+            } else if (type === 'base') {
+                let bases = { dec: 10, bin: 2, hex: 16, oct: 8 };
+                try {
+                    let dec = parseInt(sourceInput.value, bases[sels[sourceIndex - 1]]); if (isNaN(dec)) throw new Error();
+                    vals.forEach((v, idx) => { if (idx !== sourceIndex - 1) v.value = dec.toString(bases[sels[idx]]).toUpperCase(); });
+                } catch(e) { vals.forEach((v, idx) => { if (idx !== sourceIndex - 1) v.value = 'Err'; }); }
+            } else if (type === 'fuel') {
+                let kml = sels[sourceIndex-1] === 'kml' ? num : (sels[sourceIndex-1] === 'l100' ? (num===0?0:100/num) : num/2.35215);
+                vals.forEach((v, idx) => {
+                    if(idx !== sourceIndex-1) {
+                        let t = sels[idx]; v.value = (t === 'kml' ? kml : (t === 'l100' ? (kml===0?0:100/kml) : kml*2.35215)).toFixed(2);
+                    }
+                });
+            } else if (type === 'shoes') {
+                let jp = sels[sourceIndex-1] === 'jp' ? num : (sels[sourceIndex-1] === 'us' ? num+18 : (sels[sourceIndex-1] === 'uk' ? num+18.5 : ((num-4)/1.5 - 1.5)));
+                vals.forEach((v, idx) => {
+                    if(idx !== sourceIndex-1) {
+                        let t = sels[idx]; v.value = (t === 'jp' ? jp : (t === 'us' ? jp-18 : (t === 'uk' ? jp-18.5 : (jp+1.5)*1.5+4))).toFixed(1);
+                    }
+                });
+            } else {
+                let baseValue = num * unitData[type].ratios[sels[sourceIndex - 1]];
+                vals.forEach((v, idx) => {
+                    if (idx !== sourceIndex - 1) {
+                        let res = baseValue / unitData[type].ratios[sels[idx]];
+                        v.value = (res < 0.0001 || res > 9999999) && res !== 0 ? res.toExponential(4) : parseFloat(res.toFixed(6));
+                    }
+                });
+            }
+        }
+
+        function openConverter(type) {
+            activeConverter = type;
+            document.getElementById('category-bar').classList.add('hidden');
+            document.getElementById('tab-container').classList.add('hidden');
+            const txt = i18n[currentLang] || i18n['zh-TW'];
+            const titleEl = document.getElementById('converter-title');
+            titleEl.innerText = txt[type] || type;
+            titleEl.classList.remove('hidden');
+
+            document.getElementById('panel-convert-menu').classList.add('hidden');
+            document.getElementById('panel-converter-detail').classList.remove('hidden');
+            document.getElementById('back-btn').classList.remove('hidden');
+
+            const container = document.getElementById('converter-content');
+            document.getElementById('converter-subtitle').innerText = txt[type] || type;
+            
+            const apiStatusEl = document.getElementById('api-status');
+            apiStatusEl.classList.toggle('hidden', !['currency', 'travel'].includes(type));
+            document.getElementById('api-status-text').innerText = apiLastUpdateText;
+
+            if (['currency', 'length', 'weight', 'area', 'volume', 'speed', 'data', 'time', 'shoes', 'fuel', 'cooking'].includes(type)) {
+                let options = type === 'currency' ? generateOptions(null, true) : generateOptions(unitData[type].units);
+                let defaults = {
+                    currency: ['USD', 'TWD', 'JPY'], length: ['m', 'cm', 'in'], weight: ['kg', 'g', 'lb'], 
+                    area: ['sqm', 'ping', 'ha'], volume: ['l', 'ml', 'gal'], speed: ['kmh', 'ms', 'mph'], data: ['gb', 'mb', 'kb'], time: ['d', 'h', 'min'],
+                    shoes: ['jp', 'us', 'eu'], fuel: ['kml', 'l100', 'mpg'], cooking: ['cup', 'ml', 'flour_g']
+                };
+                container.innerHTML = render3RowUI(type, options);
+                document.getElementById('sel-1').value = defaults[type][0]; document.getElementById('sel-2').value = defaults[type][1]; document.getElementById('sel-3').value = defaults[type][2];
+                do3RowConvert(type, 1);
+            } 
+            else if (type === 'temp') {
+                container.innerHTML = render3RowUI(type, `<option value="c">攝氏 (°C)</option><option value="f">華氏 (°F)</option><option value="k">凱氏 (K)</option>`);
+                document.getElementById('sel-1').value = 'c'; document.getElementById('sel-2').value = 'f'; document.getElementById('sel-3').value = 'k'; do3RowConvert(type, 1);
+            }
+            else if (type === 'base') {
+                container.innerHTML = render3RowUI(type, `<option value="dec">十進制</option><option value="bin">二進制</option><option value="hex">十六進制</option><option value="oct">八進制</option>`);
+                document.getElementById('sel-1').value = 'dec'; document.getElementById('sel-2').value = 'bin'; document.getElementById('sel-3').value = 'hex';
+                ['val-1','val-2','val-3'].forEach(id => document.getElementById(id).type = "text");
+                document.getElementById('val-1').value = '255'; do3RowConvert(type, 1);
+            }
+            else if (type === 'discount') {
+                container.innerHTML = `<div class="space-y-4 pt-1">
+                    <div class="skin-card p-4 rounded-3xl border skin-border flex items-center"><span class="font-extrabold skin-sub w-1/3 text-base sm:text-lg">原價 (金額)</span><input id="dc-price" type="number" value="1000" oninput="calcDiscount()" class="w-2/3 bg-transparent text-right font-mono font-extrabold text-3xl skin-text focus:outline-none"></div>
+                    <div class="skin-card p-4 rounded-3xl border skin-border flex items-center"><span class="font-extrabold skin-sub w-1/3 text-base sm:text-lg">折數 (85折)</span><input id="dc-discount" type="number" value="85" oninput="calcDiscount()" class="w-2/3 bg-transparent text-right font-mono font-extrabold text-3xl skin-text focus:outline-none"><span class="ml-1 skin-sub text-base font-bold">折</span></div>
+                    <div class="mt-3 p-6 skin-card rounded-[2.5rem] border skin-border text-center shadow-lg">
+                        <div class="text-sm font-bold skin-sub">折後總價</div>
+                        <div id="dc-final" class="text-4xl font-black skin-accent-text my-2 font-mono">$850</div>
+                        <div class="text-sm font-bold skin-sub mt-1">共省下 <span id="dc-saved" class="skin-text font-bold">$150</span></div>
+                    </div>
+                    ${renderNoteCard('discount')}
+                </div>`; calcDiscount();
+            }
+            else if (type === 'tip') {
+                container.innerHTML = `<div class="space-y-4 pt-1">
+                    <div class="skin-card p-4 rounded-3xl border skin-border flex items-center"><span class="font-extrabold skin-sub w-1/3 text-base sm:text-lg">消費總額</span><input id="tip-amount" type="number" value="2000" oninput="calcTip()" class="w-2/3 bg-transparent text-right font-mono font-extrabold text-3xl skin-text focus:outline-none"></div>
+                    <div class="skin-card p-4 rounded-3xl border skin-border flex items-center"><span class="font-extrabold skin-sub w-1/3 text-base sm:text-lg">小費比例</span><input id="tip-rate" type="number" value="10" oninput="calcTip()" class="w-2/3 bg-transparent text-right font-mono font-extrabold text-3xl skin-text focus:outline-none"><span class="ml-1 skin-sub text-base font-bold">%</span></div>
+                    <div class="skin-card p-4 rounded-3xl border skin-border flex items-center"><span class="font-extrabold skin-sub w-1/3 text-base sm:text-lg">分攤人數</span><input id="tip-people" type="number" value="4" oninput="calcTip()" class="w-2/3 bg-transparent text-right font-mono font-extrabold text-3xl skin-text focus:outline-none"><span class="ml-1 skin-sub text-base font-bold">人</span></div>
+                    <div class="mt-3 p-6 skin-card rounded-[2.5rem] border skin-border text-center shadow-lg">
+                        <div class="text-sm font-bold skin-sub">每人應付</div>
+                        <div id="tip-per-person" class="text-4xl font-black skin-accent-text my-2 font-mono">$550</div>
+                        <div class="text-sm font-bold skin-sub mt-1">含小費總額: <span id="tip-total" class="skin-text font-bold">$2,200</span> (小費 $200)</div>
+                    </div>
+                    ${renderNoteCard('tip')}
+                </div>`; calcTip();
+            }
+            else if (type === 'bmi') {
+                container.innerHTML = `<div class="space-y-4 pt-1">
+                    <div class="skin-card p-4 rounded-3xl border skin-border flex justify-between items-center"><span class="font-extrabold skin-sub text-base sm:text-lg">身高 (cm)</span><input id="bmi-h" type="number" value="170" oninput="calcBMI()" class="w-1/2 bg-transparent text-right font-mono font-extrabold text-3xl skin-text focus:outline-none"></div>
+                    <div class="skin-card p-4 rounded-3xl border skin-border flex justify-between items-center"><span class="font-extrabold skin-sub text-base sm:text-lg">體重 (kg)</span><input id="bmi-w" type="number" value="65" oninput="calcBMI()" class="w-1/2 bg-transparent text-right font-mono font-extrabold text-3xl skin-text focus:outline-none"></div>
+                    <div class="mt-3 p-6 skin-card rounded-[2.5rem] text-center border skin-border shadow-lg"><div class="text-sm font-bold skin-sub">BMI 指數</div><div id="bmi-val" class="text-5xl font-black skin-accent-text my-2 font-mono">22.5</div><div id="bmi-status" class="inline-block px-5 py-2 rounded-full text-sm font-extrabold mt-1">正常範圍</div></div>
+                    ${renderNoteCard('bmi')}
+                </div>`; calcBMI();
+            }
+            else if (type === 'mortgage') {
+                container.innerHTML = `<div class="space-y-4 pt-1">
+                    <div class="skin-card p-4 rounded-3xl border skin-border flex items-center"><span class="font-extrabold skin-sub w-1/3 text-base sm:text-lg">貸款金額</span><input id="mg-amount" type="number" value="1000" oninput="calcMortgage()" class="w-2/3 bg-transparent text-right font-mono font-extrabold text-3xl skin-text focus:outline-none"><span class="ml-1 skin-sub text-base font-bold">萬</span></div>
+                    <div class="skin-card p-4 rounded-3xl border skin-border flex items-center"><span class="font-extrabold skin-sub w-1/3 text-base sm:text-lg">年利率</span><input id="mg-rate" type="number" value="2.1" step="0.1" oninput="calcMortgage()" class="w-2/3 bg-transparent text-right font-mono font-extrabold text-3xl skin-text focus:outline-none"><span class="ml-1 skin-sub text-base font-bold">%</span></div>
+                    <div class="skin-card p-4 rounded-3xl border skin-border flex items-center"><span class="font-extrabold skin-sub w-1/3 text-base sm:text-lg">貸款年限</span><input id="mg-years" type="number" value="30" oninput="calcMortgage()" class="w-2/3 bg-transparent text-right font-mono font-extrabold text-3xl skin-text focus:outline-none"><span class="ml-1 skin-sub text-base font-bold">年</span></div>
+                    <div class="mt-3 p-6 skin-card rounded-[2.5rem] text-center border skin-border shadow-xl"><div class="text-sm font-bold skin-sub">每月攤還本息</div><div id="mg-result" class="text-4xl font-black skin-accent-text my-2 font-mono">$37,515</div></div>
+                    ${renderNoteCard('mortgage')}
+                </div>`; calcMortgage();
+            }
+            else if (type === 'compound') {
+                container.innerHTML = `<div class="space-y-4 pt-1">
+                    <div class="skin-card p-4 rounded-3xl border skin-border flex items-center"><span class="font-extrabold skin-sub w-1/3 text-base sm:text-lg">初始本金</span><input id="cp-init" type="number" value="100000" oninput="calcCompound()" class="w-2/3 bg-transparent text-right font-mono font-extrabold text-3xl skin-text focus:outline-none"></div>
+                    <div class="skin-card p-4 rounded-3xl border skin-border flex items-center"><span class="font-extrabold skin-sub w-1/3 text-base sm:text-lg">每月投入</span><input id="cp-month" type="number" value="10000" oninput="calcCompound()" class="w-2/3 bg-transparent text-right font-mono font-extrabold text-3xl skin-text focus:outline-none"></div>
+                    <div class="skin-card p-4 rounded-3xl border skin-border flex items-center"><span class="font-extrabold skin-sub w-1/3 text-base sm:text-lg">年化報酬</span><input id="cp-rate" type="number" value="5" step="0.1" oninput="calcCompound()" class="w-2/3 bg-transparent text-right font-mono font-extrabold text-3xl skin-text focus:outline-none"><span class="ml-1 skin-sub text-base font-bold">%</span></div>
+                    <div class="skin-card p-4 rounded-3xl border skin-border flex items-center"><span class="font-extrabold skin-sub w-1/3 text-base sm:text-lg">投資年限</span><input id="cp-years" type="number" value="10" oninput="calcCompound()" class="w-2/3 bg-transparent text-right font-mono font-extrabold text-3xl skin-text focus:outline-none"><span class="ml-1 skin-sub text-base font-bold">年</span></div>
+                    <div class="mt-3 p-6 skin-card rounded-[2.5rem] text-center border skin-border shadow-lg"><div class="text-sm font-bold skin-sub">期末總資產</div><div id="cp-total" class="text-3xl sm:text-4xl font-black skin-accent-text my-2 font-mono">$0</div></div>
+                    ${renderNoteCard('compound')}
+                </div>`; calcCompound();
+            }
+            else if (type === 'travel') {
+                let options = generateOptions(null, true);
+                container.innerHTML = `<div class="space-y-4 pt-1">
+                    <div class="skin-card p-4 rounded-3xl border skin-border">
+                        <span class="text-sm font-bold skin-sub block mb-1.5">外幣 (標價)</span>
+                        <div class="flex items-center"><select id="tvl-foreign" onchange="calcTravel()" class="bg-transparent font-extrabold text-xl skin-text mr-2 focus:outline-none w-36 truncate">${options}</select><input id="tvl-amt" type="number" value="1000" oninput="calcTravel()" class="flex-1 w-full bg-transparent text-right font-mono font-extrabold text-3xl skin-text focus:outline-none"></div>
+                    </div>
+                    <div class="skin-card p-4 rounded-3xl border skin-border">
+                        <span class="text-sm font-bold skin-accent-text block mb-1.5">本幣 (實際花費)</span>
+                        <div class="flex items-center"><select id="tvl-home" onchange="calcTravel()" class="bg-transparent font-extrabold text-xl skin-text mr-2 focus:outline-none w-36 truncate">${options}</select><div id="tvl-res" class="flex-1 text-right font-mono font-black text-3xl skin-accent-text break-all">0</div></div>
+                    </div>
+                    <div class="skin-card rounded-[2.5rem] p-5 border skin-border shadow-sm">
+                        <div class="text-sm font-extrabold skin-sub mb-3 text-center">快速價格對照表</div>
+                        <div id="tvl-table" class="grid grid-cols-2 gap-x-5 gap-y-2 text-base font-mono skin-text"></div>
+                    </div>
+                    ${renderNoteCard('travel')}
+                </div>`;
+                document.getElementById('tvl-foreign').value = 'JPY'; document.getElementById('tvl-home').value = 'TWD'; calcTravel();
+            }
+            else if (type === 'chineseNum') {
+                container.innerHTML = `<div class="space-y-4 pt-1 flex flex-col h-full">
+                    <div class="skin-card p-4 rounded-3xl border skin-border"><div class="text-sm font-bold skin-sub mb-1.5">阿拉伯數字</div><input id="cnum-in" type="number" value="12345" oninput="convertChineseNum()" class="w-full bg-transparent font-mono font-extrabold text-3xl skin-text focus:outline-none"></div>
+                    <div class="p-6 skin-card rounded-[2.5rem] border skin-border flex flex-col justify-center relative shadow-lg min-h-[120px]"><div class="text-sm font-bold skin-accent-text absolute top-4 left-5">繁體大寫</div><div id="cnum-out" class="text-2xl sm:text-3xl font-black skin-text break-all mt-4">壹萬貳仟參佰肆拾伍</div><button onclick="copyText('cnum-out')" class="absolute top-4 right-4 p-2.5 skin-btn rounded-xl border skin-sub hover:skin-accent-text shadow-sm btn-active"><i data-lucide="copy" class="w-5 h-5"></i></button></div>
+                    ${renderNoteCard('chineseNum')}
+                </div>`; convertChineseNum();
+            }
+            else if (type === 'date' || type === 'date_target') {
+                let today = new Date().toISOString().split('T')[0];
+                if (type === 'date') {
+                    container.innerHTML = `<div class="space-y-4 pt-1">
+                        <div class="skin-card p-4 rounded-3xl border skin-border flex justify-between items-center"><span class="font-extrabold skin-sub text-base sm:text-lg">開始日</span><input id="date-start" type="date" value="${today}" onchange="calcDate()" class="bg-transparent text-right font-mono font-extrabold text-xl skin-text focus:outline-none"></div>
+                        <div class="skin-card p-4 rounded-3xl border skin-border flex justify-between items-center"><span class="font-extrabold skin-sub text-base sm:text-lg">結束日</span><input id="date-end" type="date" value="${today}" onchange="calcDate()" class="bg-transparent text-right font-mono font-extrabold text-xl skin-text focus:outline-none"></div>
+                        <div class="mt-3 p-6 skin-card rounded-[2.5rem] text-center border skin-border shadow-xl"><div class="text-sm font-bold skin-sub">相差天數</div><div id="date-result" class="text-4xl font-black skin-accent-text my-2 font-mono">0 天</div></div>
+                        ${renderNoteCard('date')}
+                    </div>`; calcDate();
+                } else {
+                    container.innerHTML = `<div class="space-y-4 pt-1">
+                        <div class="skin-card p-4 rounded-3xl border skin-border flex justify-between items-center"><span class="font-extrabold skin-sub text-base sm:text-lg">基準日</span><input id="dt-start" type="date" value="${today}" onchange="calcDateTarget()" class="bg-transparent text-right font-mono font-extrabold text-xl skin-text focus:outline-none"></div>
+                        <div class="skin-card p-4 rounded-3xl border skin-border flex justify-between items-center"><span class="font-extrabold skin-sub text-base sm:text-lg">推算天數</span><input id="dt-days" type="number" value="100" oninput="calcDateTarget()" class="w-1/2 bg-transparent text-right font-mono font-extrabold text-3xl skin-text focus:outline-none"></div>
+                        <div class="mt-3 p-6 skin-card rounded-[2.5rem] text-center border skin-border shadow-xl"><div class="text-sm font-bold skin-accent-text">目標日期是</div><div id="dt-result" class="text-3xl font-black skin-text my-2 font-mono"></div></div>
+                        ${renderNoteCard('date_target')}
+                    </div>`; calcDateTarget();
+                }
+            }
+            else if (type === 'age') {
+                container.innerHTML = `<div class="space-y-4 pt-1">
+                    <div class="skin-card p-4 rounded-3xl border skin-border flex justify-between items-center"><span class="font-extrabold skin-sub text-base sm:text-lg">出生年月日</span><input id="age-birth" type="date" value="2000-01-01" onchange="calcAge()" class="bg-transparent text-right font-mono font-extrabold text-xl skin-text focus:outline-none"></div>
+                    <div class="mt-3 grid grid-cols-3 gap-3">
+                        <div class="skin-card p-4 rounded-3xl border skin-border text-center"><div id="age-y" class="text-3xl font-black skin-accent-text font-mono">0</div><div class="text-sm font-bold skin-sub mt-1">歲</div></div>
+                        <div class="skin-card p-4 rounded-3xl border skin-border text-center"><div id="age-m" class="text-3xl font-black skin-accent-text font-mono">0</div><div class="text-sm font-bold skin-sub mt-1">個月</div></div>
+                        <div class="skin-card p-4 rounded-3xl border skin-border text-center"><div id="age-d" class="text-3xl font-black skin-accent-text font-mono">0</div><div class="text-sm font-bold skin-sub mt-1">天</div></div>
+                    </div>
+                    <div class="p-5 skin-card rounded-3xl border skin-border text-center mt-2 shadow-md"><div class="text-sm font-bold skin-sub">距離下次生日還有</div><div id="age-next" class="text-3xl font-black skin-text mt-1 font-mono">0 天</div></div>
+                    ${renderNoteCard('age')}
+                </div>`; calcAge();
+            }
+            else if (type === 'lunar') {
+                let today = new Date().toISOString().split('T')[0];
+                container.innerHTML = `<div class="space-y-4 pt-1 flex flex-col">
+                    <div class="skin-card p-4 rounded-3xl border skin-border"><div class="text-sm font-bold skin-sub mb-1.5">選擇國曆日期</div><input id="lunar-in" type="date" value="${today}" onchange="calcLunar()" class="w-full bg-transparent font-extrabold text-xl skin-text focus:outline-none"></div>
+                    <div class="mt-1 p-6 skin-card rounded-[2.5rem] flex flex-col space-y-4 shadow-xl border skin-border relative overflow-hidden">
+                        <div class="flex justify-between items-center border-b skin-border pb-3"><span class="skin-sub font-bold text-lg">星期</span><span id="lun-week" class="text-2xl font-extrabold skin-text"></span></div>
+                        <div class="flex justify-between items-center border-b skin-border pb-3"><span class="skin-sub font-bold text-lg">星座</span><span id="lun-zodiac" class="text-2xl font-extrabold skin-accent-text"></span></div>
+                        <div class="flex flex-col pt-1"><span class="skin-sub font-bold text-lg mb-1">農曆日期</span><div class="text-right"><div id="lun-y" class="text-base font-bold skin-accent-text mb-1"></div><div id="lun-md" class="text-3xl font-black skin-text"></div></div></div>
+                    </div>
+                    ${renderNoteCard('lunar')}
+                </div>`; calcLunar();
+            }
+            else if (type === 'color') {
+                container.innerHTML = `<div class="space-y-4 pt-1">
+                    <div class="skin-card p-4 rounded-3xl border skin-border flex items-center"><span class="font-extrabold skin-sub w-1/4 text-base sm:text-lg">HEX</span><input id="col-hex" type="text" value="#FF6600" oninput="calcColor('hex')" class="w-3/4 bg-transparent text-right font-mono font-extrabold text-2xl skin-text focus:outline-none uppercase"></div>
+                    <div class="skin-card p-4 rounded-3xl border skin-border flex items-center"><span class="font-extrabold skin-sub w-1/4 text-base sm:text-lg">RGB</span><input id="col-rgb" type="text" value="255, 102, 0" oninput="calcColor('rgb')" class="w-3/4 bg-transparent text-right font-mono font-extrabold text-2xl skin-text focus:outline-none"></div>
+                    <div class="mt-4 flex justify-center"><div id="col-preview" class="w-28 h-28 rounded-full shadow-2xl border-4 skin-border" style="background-color: #FF6600"></div></div>
+                    ${renderNoteCard('color')}
+                </div>`;
+            }
+            refreshIcons();
+        }
+
+        // 各工具運算函式
+        function calcDiscount() {
+            let price = parseFloat(document.getElementById('dc-price').value) || 0;
+            let discount = parseFloat(document.getElementById('dc-discount').value) || 100;
+            let rate = discount > 10 ? discount / 100 : discount / 10;
+            let finalPrice = Math.round(price * rate);
+            let saved = price - finalPrice;
+            document.getElementById('dc-final').innerText = `$${finalPrice.toLocaleString()}`;
+            document.getElementById('dc-saved').innerText = `$${saved.toLocaleString()}`;
+        }
+
+        function calcTip() {
+            let amount = parseFloat(document.getElementById('tip-amount').value) || 0;
+            let rate = (parseFloat(document.getElementById('tip-rate').value) || 0) / 100;
+            let people = Math.max(1, parseInt(document.getElementById('tip-people').value) || 1);
+            let tip = Math.round(amount * rate);
+            let total = amount + tip;
+            let perPerson = Math.round(total / people);
+            document.getElementById('tip-per-person').innerText = `$${perPerson.toLocaleString()}`;
+            document.getElementById('tip-total').innerText = `$${total.toLocaleString()}`;
+        }
+
+        function calcBMI() {
+            let h = parseFloat(document.getElementById('bmi-h').value) / 100, w = parseFloat(document.getElementById('bmi-w').value);
+            if (!h || !w || h <= 0) return; let bmi = (w / (h * h)).toFixed(1); document.getElementById('bmi-val').innerText = bmi;
+            let st = document.getElementById('bmi-status');
+            if (bmi < 18.5) { st.innerText = '過輕 (<18.5)'; st.className = 'inline-block px-5 py-2 rounded-full text-sm font-extrabold bg-amber-500/20 text-amber-400 mt-1'; }
+            else if (bmi < 24) { st.innerText = '正常 (18.5-24)'; st.className = 'inline-block px-5 py-2 rounded-full text-sm font-extrabold bg-emerald-500/20 text-emerald-400 mt-1'; }
+            else if (bmi < 27) { st.innerText = '過重 (24-27)'; st.className = 'inline-block px-5 py-2 rounded-full text-sm font-extrabold bg-orange-500/20 text-orange-400 mt-1'; }
+            else { st.innerText = '肥胖 (≥27)'; st.className = 'inline-block px-5 py-2 rounded-full text-sm font-extrabold bg-red-500/20 text-red-400 mt-1'; }
+        }
+
+        function calcMortgage() {
+            let p = (parseFloat(document.getElementById('mg-amount').value)||0)*10000, r = (parseFloat(document.getElementById('mg-rate').value)||0)/100/12, n = (parseFloat(document.getElementById('mg-years').value)||0)*12;
+            if (p<=0||r<=0||n<=0) { document.getElementById('mg-result').innerText = '$0'; return; }
+            document.getElementById('mg-result').innerText = `$${Math.round((p*r*Math.pow(1+r,n))/(Math.pow(1+r,n)-1)).toLocaleString()}`;
+        }
+
+        function calcCompound() {
+            let p = parseFloat(document.getElementById('cp-init').value)||0, m = parseFloat(document.getElementById('cp-month').value)||0, r = (parseFloat(document.getElementById('cp-rate').value)||0)/100/12, n = (parseFloat(document.getElementById('cp-years').value)||0)*12;
+            let future = p * Math.pow(1+r, n) + m * ((Math.pow(1+r, n) - 1) / r);
+            document.getElementById('cp-total').innerText = `$${Math.round(future).toLocaleString()}`;
+        }
+
+        function calcTravel() {
+            let amt = parseFloat(document.getElementById('tvl-amt').value)||0;
+            let foreign = document.getElementById('tvl-foreign').value;
+            let home = document.getElementById('tvl-home').value;
+            let baseUSD = amt / (currencyRates[foreign] || 1);
+            let homeVal = baseUSD * (currencyRates[home] || 1);
+            document.getElementById('tvl-res').innerText = homeVal < 100 ? homeVal.toFixed(2) : Math.round(homeVal).toLocaleString();
+
+            const table = document.getElementById('tvl-table');
+            const amounts = [100, 500, 1000, 5000, 10000];
+            table.innerHTML = amounts.map(a => {
+                let v = (a / (currencyRates[foreign]||1)) * (currencyRates[home]||1);
+                let fv = v < 100 ? v.toFixed(2) : Math.round(v).toLocaleString();
+                return `<div class="flex justify-between border-b skin-border py-1.5"><span class="skin-sub">${a}</span><span class="font-extrabold skin-text">${fv}</span></div>`;
+            }).join('');
+        }
+
+        function calcLunar() {
+            let d = new Date(document.getElementById('lunar-in').value);
+            if(isNaN(d)) return;
+            const weeks = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+            document.getElementById('lun-week').innerText = weeks[d.getDay()];
+            const zodiac = ['摩羯座', '水瓶座', '雙魚座', '牡羊座', '金牛座', '雙子座', '巨蟹座', '獅子座', '處女座', '天秤座', '天蠍座', '射手座', '摩羯座'];
+            const days = [20, 19, 21, 20, 21, 22, 23, 23, 23, 24, 23, 22];
+            let m = d.getMonth() + 1, day = d.getDate();
+            document.getElementById('lun-zodiac').innerText = day < days[m - 1] ? zodiac[m - 1] : zodiac[m];
+            try {
+                if(typeof Solar !== 'undefined') {
+                    let solar = Solar.fromYmd(d.getFullYear(), d.getMonth() + 1, d.getDate());
+                    let lunar = solar.getLunar();
+                    document.getElementById('lun-y').innerText = `${lunar.getYearInGanZhi()}年 (${lunar.getYearShengXiao()}年)`;
+                    document.getElementById('lun-md').innerText = `${lunar.getMonthInChinese()}月${lunar.getDayInChinese()}`;
+                }
+            } catch(e) {}
+        }
+
+        function calcDate() {
+            let d1 = new Date(document.getElementById('date-start').value), d2 = new Date(document.getElementById('date-end').value);
+            if(!isNaN(d1) && !isNaN(d2)) document.getElementById('date-result').innerText = `${Math.ceil(Math.abs(d2 - d1) / 86400000)} 天`;
+        }
+
+        function calcDateTarget() {
+            let d = new Date(document.getElementById('dt-start').value), days = parseInt(document.getElementById('dt-days').value)||0;
+            if(!isNaN(d)) { d.setDate(d.getDate() + days); document.getElementById('dt-result').innerText = d.toISOString().split('T')[0]; }
+        }
+
+        function calcAge() {
+            let b = new Date(document.getElementById('age-birth').value), now = new Date();
+            if(isNaN(b) || b > now) return;
+            let y = now.getFullYear() - b.getFullYear(), m = now.getMonth() - b.getMonth(), d = now.getDate() - b.getDate();
+            if (d < 0) { m--; let prev = new Date(now.getFullYear(), now.getMonth(), 0); d += prev.getDate(); }
+            if (m < 0) { y--; m += 12; }
+            document.getElementById('age-y').innerText = y; document.getElementById('age-m').innerText = m; document.getElementById('age-d').innerText = d;
+            let next = new Date(now.getFullYear(), b.getMonth(), b.getDate());
+            if(now > next) next.setFullYear(now.getFullYear()+1);
+            document.getElementById('age-next').innerText = `${Math.ceil((next - now) / 86400000)} 天`;
+        }
+
+        function calcColor(source) {
+            let hex = document.getElementById('col-hex'), rgb = document.getElementById('col-rgb');
+            if (source === 'hex') {
+                let h = hex.value.replace('#', '');
+                if(h.length === 3) h = h.split('').map(x=>x+x).join('');
+                if(h.length === 6) {
+                    let r = parseInt(h.substring(0,2), 16), g = parseInt(h.substring(2,4), 16), b = parseInt(h.substring(4,6), 16);
+                    rgb.value = `${r}, ${g}, ${b}`; document.getElementById('col-preview').style.backgroundColor = `#${h}`;
+                }
+            } else {
+                let parts = rgb.value.split(',').map(x=>parseInt(x.trim()));
+                if(parts.length===3 && !parts.some(isNaN)) {
+                    let h = '#' + parts.map(x=>{let s = Math.max(0,Math.min(255,x)).toString(16); return s.length===1?'0'+s:s;}).join('').toUpperCase();
+                    hex.value = h; document.getElementById('col-preview').style.backgroundColor = h;
+                }
+            }
+        }
+
+        function convertChineseNum() {
+            const numStr = document.getElementById('cnum-in').value;
+            if(!numStr) { document.getElementById('cnum-out').innerText = '零'; return; }
+            const chars = ['零','壹','貳','參','肆','伍','陸','柒','捌','玖'], units = ['','拾','佰','仟','萬','拾','佰','仟','億','拾','佰','仟'];
+            let res = '', zeroFlag = false, strRev = numStr.split('').reverse().join('');
+            for(let i=0; i<strRev.length; i++) {
+                let d = parseInt(strRev[i]);
+                if (d===0) { if(i===4)res='萬'+res; else if(i===8)res='億'+res; zeroFlag = true; }
+                else { if(zeroFlag && i!==4 && i!==8)res='零'+res; res=chars[d]+units[i]+res; zeroFlag=false; }
+            }
+            document.getElementById('cnum-out').innerText = res.replace(/零萬/g,'萬').replace(/零億/g,'億').replace(/億萬/g,'億').replace(/零+$/,'') || '零';
+        }
+
+        function copyText(id) {
+            const el = document.createElement('textarea'); el.value = document.getElementById(id).innerText;
+            document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el);
+            const txt = i18n[currentLang] || i18n['zh-TW'];
+            showToast(txt.copied || '已複製數值');
+        }
+
+        /* ===== Modal 控制 ===== */
+        function openHistoryModal() {
+            const list = document.getElementById('history-list');
+            const txt = i18n[currentLang] || i18n['zh-TW'];
+            list.innerHTML = historyRecords.length ? historyRecords.map(item => {
+                const safeFormula = item.replace(/"/g, '&quot;');
+                return `
+                    <div class="history-item skin-card p-4 rounded-2xl font-mono skin-text text-right text-lg cursor-pointer border skin-border hover:opacity-80 transition-opacity btn-active" data-formula="${safeFormula}" title="點擊複製整條算式">
+                        ${item}
+                    </div>
+                `;
+            }).join('') : `<div class="text-center skin-sub py-10 font-bold text-lg">${txt.noHistory || '暫無紀錄'}</div>`;
+            
+            list.querySelectorAll('.history-item').forEach(el => {
+                el.addEventListener('click', () => {
+                    const formula = el.dataset.formula;
+                    const doCopy = (text) => {
+                        if (navigator.clipboard && window.isSecureContext) {
+                            return navigator.clipboard.writeText(text);
+                        }
+                        return new Promise((resolve) => {
+                            const ta = document.createElement('textarea');
+                            ta.value = text;
+                            ta.style.position = 'fixed';
+                            ta.style.opacity = '0';
+                            document.body.appendChild(ta);
+                            ta.select();
+                            try { document.execCommand('copy'); } catch (e) {}
+                            document.body.removeChild(ta);
+                            resolve();
+                        });
+                    };
+                    doCopy(formula).then(() => {
+                        showToast('已複製成功');
+                    });
+                });
+            });
+            
+            const modal = document.getElementById('history-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+                document.getElementById('history-modal-content').classList.remove('scale-95');
+            }, 10);
+            refreshIcons();
+        }
+
+        function closeHistoryModal() { 
+            document.getElementById('history-modal-content').classList.add('scale-95');
+            const modal = document.getElementById('history-modal');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+
+        function clearHistory() { historyRecords = []; localStorage.removeItem('calc_history_data'); openHistoryModal(); }
+
+        function showToast(msg) {
+            const t = document.getElementById('custom-toast'); t.innerText = msg;
+            t.classList.remove('opacity-0', 'pointer-events-none');
+            setTimeout(() => t.classList.add('opacity-0', 'pointer-events-none'), 2000);
+        }
+    </script>
+
+    <!-- PWA Service Worker 註冊（部署到 HTTP/HTTPS 後自動啟用離線快取） -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then((reg) => console.log('✅ SW registered:', reg.scope))
+                    .catch((err) => console.log('❌ SW failed:', err));
+            });
+        }
+    </script>
+</body>
+</html>
