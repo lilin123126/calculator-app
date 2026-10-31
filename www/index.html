@@ -792,6 +792,34 @@
 
         // 匯率數據與 API 抓取
         let currencyRates = { USD: 1, TWD: 32.5, JPY: 155.0, CNY: 7.23, EUR: 0.92, GBP: 0.79, KRW: 1350, HKD: 7.82, AUD: 1.52, SGD: 1.35, THB: 36.5, VND: 25400, CAD: 1.37, CHF: 0.90, NZD: 1.65 };
+        // 幣別代碼 → 國名（繁中；無國名之特殊貨幣標註性質）
+        const currencyNames = {
+            USD:'美國', TWD:'台灣', JPY:'日本', CNY:'中國', HKD:'香港', KRW:'韓國', SGD:'新加坡',
+            MYR:'馬來西亞', THB:'泰國', VND:'越南', IDR:'印尼', PHP:'菲律賓', INR:'印度', PKR:'巴基斯坦',
+            BDT:'孟加拉', LKR:'斯里蘭卡', NPR:'尼泊爾', MMK:'緬甸', KHR:'柬埔寨', LAK:'寮國', MNT:'蒙古', BND:'汶萊',
+            EUR:'歐元區', GBP:'英國', CHF:'瑞士', SEK:'瑞典', NOK:'挪威', DKK:'丹麥', ISK:'冰島',
+            PLN:'波蘭', CZK:'捷克', HUF:'匈牙利', RON:'羅馬尼亞', BGN:'保加利亞', RSD:'塞爾維亞',
+            UAH:'烏克蘭', RUB:'俄羅斯', TRY:'土耳其', GEL:'喬治亞', AZN:'亞塞拜然', AMD:'亞美尼亞',
+            BYN:'白俄羅斯', MDL:'摩爾多瓦', ALL:'阿爾巴尼亞', MKD:'北馬其頓', BAM:'波士尼亞', MGA:'馬達加斯加',
+            AED:'阿聯酋', SAR:'沙烏地阿拉伯', QAR:'卡達', KWD:'科威特', BHD:'巴林', OMR:'阿曼',
+            JOD:'約旦', ILS:'以色列', LBP:'黎巴嫩', IQD:'伊拉克', IRR:'伊朗', YER:'葉門',
+            SYP:'敘利亞', AFN:'阿富汗', UZS:'烏茲別克', KZT:'哈薩克', TJS:'塔吉克', KGS:'吉爾吉斯',
+            TMT:'土庫曼', EGP:'埃及', ZAR:'南非', NGN:'奈及利亞', KES:'肯亞', GHS:'迦納',
+            MAD:'摩洛哥', TND:'突尼西亞', DZD:'阿爾及利亞', LYD:'利比亞', SDG:'蘇丹', ETB:'衣索比亞',
+            TZS:'坦尚尼亞', UGX:'烏干達', RWF:'盧安達', BIF:'蒲隆地', MWK:'馬拉威', ZMW:'尚比亞',
+            ZWL:'辛巴威', MZN:'莫三比克', AOA:'安哥拉', NAD:'納米比亞', BWP:'波札那', SZL:'史瓦帝尼',
+            LSL:'賴索托', MUR:'模里西斯', SCR:'塞席爾', CVE:'維德角', GNF:'幾內亞', GMD:'甘比亞',
+            XAF:'中非法郎區', XOF:'西非法郎區', SOS:'索馬利亞', DJF:'吉布地', ERN:'厄利垂亞',
+            LRD:'賴比瑞亞', SLL:'獅子山', MRU:'茅利塔尼亞', STN:'聖多美', CDF:'剛果民主', SSP:'南蘇丹',
+            CAD:'加拿大', MXN:'墨西哥', BRL:'巴西', ARS:'阿根廷', CLP:'智利', COP:'哥倫比亞',
+            PEN:'秘魯', UYU:'烏拉圭', PYG:'巴拉圭', BOB:'玻利維亞', VES:'委內瑞拉', CRC:'哥斯大黎加',
+            PAB:'巴拿馬', DOP:'多明尼加', GTQ:'瓜地馬拉', HNL:'宏都拉斯', NIO:'尼加拉瓜', SVC:'薩爾瓦多',
+            JMD:'牙買加', TTD:'千里達', BSD:'巴哈馬', BBD:'巴貝多', BZD:'貝里斯', GYD:'圭亞那',
+            HTG:'海地', CUP:'古巴', AWG:'阿魯巴', ANG:'庫拉索', XCD:'東加勒比', KYD:'開曼',
+            BMD:'百慕達', SRD:'蘇利南', AUD:'澳洲', NZD:'紐西蘭', FJD:'斐濟', PGK:'巴布亞紐幾內亞',
+            TOP:'東加', WST:'薩摩亞', VUV:'萬那杜', SBD:'索羅門群島', XPF:'法屬太平洋',
+            XDR:'特別提款權', XAU:'黃金', XAG:'白銀', XPT:'白金', XPD:'鈀金'
+        };
         let availableCurrencies = Object.keys(currencyRates);
         const API_TXT = {
             'zh-TW': ['即時 API 已連線', '即時 API • 更新於: '],
@@ -1303,9 +1331,10 @@
         function generateOptions(unitsObj, isCurrency = false) {
             if (isCurrency) {
                 const popular = ['USD', 'TWD', 'JPY', 'CNY', 'EUR', 'GBP', 'KRW', 'HKD', 'AUD', 'SGD', 'THB', 'VND', 'CAD', 'CHF', 'NZD'];
-                let html = popular.map(c => currencyRates[c] ? `<option value="${c}">${c}</option>` : '').join('');
+                const opt = c => `<option value="${c}">${currencyNames[c] ? `${c} ${currencyNames[c]}` : c}</option>`;
+                let html = popular.filter(c => currencyRates[c]).map(opt).join('');
                 html += `<option disabled>──────────</option>`;
-                return html + availableCurrencies.filter(c => !popular.includes(c)).map(c => `<option value="${c}">${c}</option>`).join('');
+                return html + availableCurrencies.filter(c => !popular.includes(c)).map(opt).join('');
             }
             return Object.keys(unitsObj).map(k => `<option value="${k}">${unitsObj[k]}</option>`).join('');
         }
