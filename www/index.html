@@ -84,12 +84,13 @@
         :root {
             --vh100: 100vh;
             --app-h: 100vh;
+            --safe-t: env(safe-area-inset-top, 0px);
             --safe-b: env(safe-area-inset-bottom, 0px);
             --gap: 6px;
-            /* 按鍵高度只跟「螢幕高度」有關，兩平台完全一致 */
-            --key-h: clamp(52px, calc(var(--vh100) * 0.095), 82px);
+            /* 按鍵高度只跟「螢幕高度」有關，兩平台完全一致；v5.2 每行高度縮減 80% */
+            --key-h: calc(clamp(52px, var(--vh100) * 0.095, 82px) * 0.2);
             --sci-h: clamp(32px, calc(var(--vh100) * 0.052), 46px);
-            --fs-key: clamp(30px, 9.2vw, 42px);
+            --fs-key: clamp(28px, 8.6vw, 40px);
         }
         @supports (height: 100dvh) {
             :root { --vh100: 100dvh; --app-h: 100dvh; }
@@ -177,9 +178,9 @@
         /* 矮螢幕（如 iPhone SE 320×568）：縮小鍵盤與次要文字，保住算式與結果區 */
         @media (max-height: 620px) {
             :root {
-                --key-h: clamp(42px, calc(var(--vh100) * 0.082), 58px);
+                --key-h: calc(clamp(42px, var(--vh100) * 0.082, 58px) * 0.2);
                 --sci-h: 30px;
-                --fs-key: clamp(26px, 8.4vw, 34px);
+                --fs-key: clamp(24px, 7.8vw, 32px);
             }
             .brand-sub { display: none; }
             .brand-row { padding-top: 4px; padding-bottom: 2px; }
@@ -192,7 +193,7 @@
     <div class="app-shell w-full max-w-md skin-card sm:rounded-[3rem] shadow-2xl flex flex-col overflow-hidden relative border transition-all">
 
         <!-- 頂部導航列 Header -->
-        <header class="flex flex-col px-4 pt-3 pb-2 skin-card border-b z-20 shrink-0">
+        <header class="flex flex-col px-4 pb-2 skin-card border-b z-20 shrink-0" style="padding-top: calc(env(safe-area-inset-top, 0px) + 14px)">
             <div class="flex items-center justify-between gap-2">
                 <div class="flex items-center gap-2 min-w-0 flex-1">
                     <button id="back-btn" class="hidden p-2 skin-sub hover:skin-accent-text transition-colors rounded-full -ml-1 shrink-0" onclick="goBack()">
@@ -293,7 +294,7 @@
                     <!-- 標準數字與算術按鈕 -->
                     <div class="keypad-grid">
                         <button onclick="calcClear()" class="skin-btn font-bold border btn-active text-red-400">AC</button>
-                        <button onclick="calcDelete()" class="skin-btn font-bold border btn-active"><i data-lucide="delete" class="w-7 h-7"></i></button>
+                        <button onclick="calcDelete()" class="skin-btn font-bold border btn-active"><i data-lucide="delete" class="w-4 h-4"></i></button>
                         <button onclick="calcAppend('%')" class="skin-btn font-bold border btn-active">%</button>
                         <button onclick="calcAppend('/')" class="skin-btn font-bold border btn-active skin-accent-text">÷</button>
 
